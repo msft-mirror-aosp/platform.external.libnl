@@ -3,6 +3,7 @@ cc_library {
     name: "libnl",
     host_supported: true,
     vendor_available: true,
+    product_available: true,
     vndk: {
         enabled: true,
     },
@@ -52,5 +53,9 @@ cc_library {
     sanitize: {
         integer_overflow: true,
     },
+    apex_available: [
+        "//apex_available:platform",
+        "com.android.virt",
+    ],
 }
 
