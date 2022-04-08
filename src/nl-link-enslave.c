@@ -1,4 +1,3 @@
-/* SPDX-License-Identifier: LGPL-2.1-only */
 /*
  * src/nl-link-enslave.c     Enslave a link
  *
@@ -13,8 +12,6 @@
 #include <netlink/cli/utils.h>
 #include <netlink/cli/link.h>
 #include <netlink/route/link/bonding.h>
-
-#include <linux/netlink.h>
 
 int main(int argc, char *argv[])
 {

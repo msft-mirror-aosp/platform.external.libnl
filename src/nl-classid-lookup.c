@@ -1,4 +1,3 @@
-/* SPDX-License-Identifier: LGPL-2.1-only */
 /*
  * src/nl-classid-lookup.c     Lookup classid
  *
@@ -11,7 +10,6 @@
  */
 
 #include <netlink/cli/utils.h>
-#include <linux/pkt_sched.h>
 
 static void print_usage(void)
 {
@@ -50,7 +48,7 @@ int main(int argc, char *argv[])
 			{ "raw", 0, 0, ARG_RAW },
 			{ 0, 0, 0, 0 }
 		};
-
+	
 		c = getopt_long(argc, argv, "hvr", long_opts, &optidx);
 		if (c == -1)
 			break;
@@ -61,7 +59,7 @@ int main(int argc, char *argv[])
 		case 'r': reverse = 1; break;
 		case ARG_RAW: raw = 1; break;
 		}
-	}
+ 	}
 
 	if (optind >= argc)
 		print_usage();

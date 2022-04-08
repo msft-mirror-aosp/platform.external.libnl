@@ -1,4 +1,3 @@
-/* SPDX-License-Identifier: LGPL-2.1-only */
 /*
  * src/nf-monitor.c     Monitor netfilter events
  *
@@ -14,9 +13,6 @@
 
 #include <netlink/cli/utils.h>
 #include <netlink/netfilter/nfnl.h>
-
-#include <linux/netlink.h>
-#include <linux/netfilter/nfnetlink.h>
 
 static void obj_input(struct nl_object *obj, void *arg)
 {

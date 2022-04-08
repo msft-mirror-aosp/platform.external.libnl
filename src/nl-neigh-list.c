@@ -1,4 +1,3 @@
-/* SPDX-License-Identifier: LGPL-2.1-only */
 /*
  * src/nl-neigh-list.c      List Neighbours
  *
@@ -13,8 +12,6 @@
 #include <netlink/cli/utils.h>
 #include <netlink/cli/neigh.h>
 #include <netlink/cli/link.h>
-
-#include <linux/netlink.h>
 
 static void print_usage(void)
 {
@@ -45,13 +42,13 @@ int main(int argc, char *argv[])
 		.dp_type = NL_DUMP_LINE,
 		.dp_fd = stdout,
 	};
-
+ 
 	sock = nl_cli_alloc_socket();
 	nl_cli_connect(sock, NETLINK_ROUTE);
-	link_cache = nl_cli_link_alloc_cache_flags(sock, NL_CACHE_AF_ITER);
+	link_cache = nl_cli_link_alloc_cache(sock);
 	neigh_cache = nl_cli_neigh_alloc_cache(sock);
-	neigh = nl_cli_neigh_alloc();
-
+ 	neigh = nl_cli_neigh_alloc();
+ 
 	for (;;) {
 		int c, optidx = 0;
 		enum {
@@ -69,7 +66,7 @@ int main(int argc, char *argv[])
 			{ "state", 1, 0, ARG_STATE },
 			{ 0, 0, 0, 0 }
 		};
-
+	
 		c = getopt_long(argc, argv, "f:hva:l:d:", long_opts, &optidx);
 		if (c == -1)
 			break;
@@ -84,14 +81,9 @@ int main(int argc, char *argv[])
 		case ARG_FAMILY: nl_cli_neigh_parse_family(neigh, optarg); break;
 		case ARG_STATE: nl_cli_neigh_parse_state(neigh, optarg); break;
 		}
-	}
+ 	}
 
 	nl_cache_dump_filter(neigh_cache, &params, OBJ_CAST(neigh));
-
-	rtnl_neigh_put(neigh);
-	nl_cache_put(neigh_cache);
-	nl_cache_put(link_cache);
-	nl_socket_free(sock);
 
 	return 0;
 }

@@ -1,4 +1,3 @@
-/* SPDX-License-Identifier: LGPL-2.1-only */
 /*
  * src/nf-queue.c     Monitor netfilter queue events
  *
@@ -20,8 +19,6 @@
 #include <netlink/netfilter/nfnl.h>
 #include <netlink/netfilter/queue.h>
 #include <netlink/netfilter/queue_msg.h>
-
-#include <linux/netlink.h>
 
 static struct nl_sock *nf_sock;
 
@@ -63,8 +60,9 @@ static int event_input(struct nl_msg *msg, void *arg)
 int main(int argc, char *argv[])
 {
 	struct nl_sock *rt_sock;
+	struct nl_cache *link_cache;
 	struct nfnl_queue *queue;
-	int copy_mode;
+	enum nfnl_queue_copy_mode copy_mode;
 	uint32_t copy_range;
 	int err = 1;
 	int family;
@@ -118,7 +116,7 @@ int main(int argc, char *argv[])
 
 	rt_sock = nl_cli_alloc_socket();
 	nl_cli_connect(rt_sock, NETLINK_ROUTE);
-	nl_cli_link_alloc_cache(rt_sock);
+	link_cache = nl_cli_link_alloc_cache(rt_sock);
 
 	nl_socket_set_buffer_size(nf_sock, 1024*127, 1024*127);
 

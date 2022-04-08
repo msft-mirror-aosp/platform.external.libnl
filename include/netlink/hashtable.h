@@ -12,9 +12,6 @@
 #ifndef NETLINK_HASHTABLE_H_
 #define NETLINK_HASHTABLE_H_
 
-#include <stddef.h>
-#include <stdint.h>
-
 #ifdef __cplusplus
 extern "C" {
 #endif

@@ -1,4 +1,3 @@
-/* SPDX-License-Identifier: LGPL-2.1-only */
 /*
  * src/nf-log.c     Monitor netfilter log events
  *
@@ -14,11 +13,9 @@
 
 #include <netlink/cli/utils.h>
 #include <netlink/cli/link.h>
+#include <linux/netfilter/nfnetlink_log.h>
 #include <netlink/netfilter/nfnl.h>
 #include <netlink/netfilter/log.h>
-
-#include <linux/netfilter/nfnetlink_log.h>
-#include <linux/netlink.h>
 
 static struct nfnl_log *alloc_log(void)
 {
@@ -55,8 +52,9 @@ int main(int argc, char *argv[])
 {
 	struct nl_sock *nf_sock;
 	struct nl_sock *rt_sock;
+        struct nl_cache *link_cache;
 	struct nfnl_log *log;
-	int copy_mode;
+	enum nfnl_log_copy_mode copy_mode;
 	uint32_t copy_range;
 	int err;
 	int family;
@@ -118,7 +116,7 @@ int main(int argc, char *argv[])
 
 	rt_sock = nl_cli_alloc_socket();
 	nl_cli_connect(rt_sock, NETLINK_ROUTE);
-	nl_cli_link_alloc_cache(rt_sock);
+	link_cache = nl_cli_link_alloc_cache(rt_sock);
 
 	while (1) {
 		fd_set rfds;

@@ -1,4 +1,3 @@
-/* SPDX-License-Identifier: LGPL-2.1-only */
 /*
  * src/nl-route-list.c     List route attributes
  *
@@ -13,8 +12,6 @@
 #include <netlink/cli/utils.h>
 #include <netlink/cli/route.h>
 #include <netlink/cli/link.h>
-
-#include <linux/netlink.h>
 
 static void print_usage(void)
 {

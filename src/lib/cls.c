@@ -1,4 +1,3 @@
-/* SPDX-License-Identifier: LGPL-2.1-only */
 /*
  * src/lib/cls.c     	CLI Classifier Helpers
  *

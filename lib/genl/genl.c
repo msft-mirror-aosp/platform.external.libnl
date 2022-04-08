@@ -1,4 +1,3 @@
-/* SPDX-License-Identifier: LGPL-2.1-only */
 /*
  * lib/genl/genl.c		Generic Netlink
  *
@@ -80,8 +79,7 @@ int genl_connect(struct nl_sock *sk)
  *
  * @see nl_send_simple()
  *
- * @return 0 on success or a negative error code. Due to a bug, this function
- * returns the number of bytes sent. Treat any non-negative number as success.
+ * @return 0 on success or a negative error code.
  */
 int genl_send_simple(struct nl_sock *sk, int family, int cmd,
 		     int version, int flags)
@@ -151,7 +149,7 @@ int genlmsg_valid_hdr(struct nlmsghdr *nlh, int hdrlen)
  * @return 0 on success or a negative error code.
  */
 int genlmsg_validate(struct nlmsghdr *nlh, int hdrlen, int maxtype,
-		     const struct nla_policy *policy)
+		     struct nla_policy *policy)
 {
 	struct genlmsghdr *ghdr;
 
@@ -179,7 +177,7 @@ int genlmsg_validate(struct nlmsghdr *nlh, int hdrlen, int maxtype,
  * @code
  * struct nlattr *attrs[MY_TYPE_MAX+1];
  *
- * if ((err = genlmsg_parse(nlmsg_hdr(msg), sizeof(struct my_hdr), attrs,
+ * if ((err = genlsmg_parse(nlmsg_nlh(msg), sizeof(struct my_hdr), attrs,
  *                          MY_TYPE_MAX, attr_policy)) < 0)
  * 	// ERROR
  * @endcode
@@ -191,7 +189,7 @@ int genlmsg_validate(struct nlmsghdr *nlh, int hdrlen, int maxtype,
  * @return 0 on success or a negative error code.
  */
 int genlmsg_parse(struct nlmsghdr *nlh, int hdrlen, struct nlattr *tb[],
-		  int maxtype, const struct nla_policy *policy)
+		  int maxtype, struct nla_policy *policy)
 {
 	struct genlmsghdr *ghdr;
 
@@ -260,7 +258,7 @@ void *genlmsg_user_hdr(const struct genlmsghdr *gnlh)
  */
 void *genlmsg_user_data(const struct genlmsghdr *gnlh, const int hdrlen)
 {
-	return (char *) genlmsg_user_hdr(gnlh) + NLMSG_ALIGN(hdrlen);
+	return genlmsg_user_hdr(gnlh) + NLMSG_ALIGN(hdrlen);
 }
 
 /**
@@ -364,7 +362,7 @@ void *genlmsg_put(struct nl_msg *msg, uint32_t port, uint32_t seq, int family,
 	NL_DBG(2, "msg %p: Added generic netlink header cmd=%d version=%d\n",
 	       msg, cmd, version);
 
-	return (char *) nlmsg_data(nlh) + GENL_HDRLEN;
+	return nlmsg_data(nlh) + GENL_HDRLEN;
 }
 
 /** @} */

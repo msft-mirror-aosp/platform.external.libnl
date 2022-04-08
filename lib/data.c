@@ -1,4 +1,3 @@
-/* SPDX-License-Identifier: LGPL-2.1-only */
 /*
  * lib/data.c		Abstract Data
  *
@@ -48,7 +47,7 @@
  * 
  * @return Newly allocated data handle or NULL
  */
-struct nl_data *nl_data_alloc(const void *buf, size_t size)
+struct nl_data *nl_data_alloc(void *buf, size_t size)
 {
 	struct nl_data *data;
 
@@ -82,7 +81,7 @@ errout:
  * @see nla_data_alloc
  * @return Newly allocated data handle or NULL
  */
-struct nl_data *nl_data_alloc_attr(const struct nlattr *nla)
+struct nl_data *nl_data_alloc_attr(struct nlattr *nla)
 {
 	return nl_data_alloc(nla_data(nla), nla_len(nla));
 }
@@ -93,7 +92,7 @@ struct nl_data *nl_data_alloc_attr(const struct nlattr *nla)
  *
  * @return Cloned object or NULL
  */
-struct nl_data *nl_data_clone(const struct nl_data *src)
+struct nl_data *nl_data_clone(struct nl_data *src)
 {
 	return nl_data_alloc(src->d_data, src->d_size);
 }
@@ -109,19 +108,18 @@ struct nl_data *nl_data_clone(const struct nl_data *src)
  * 
  * @return 0 on success or a negative error code
  */
-int nl_data_append(struct nl_data *data, const void *buf, size_t size)
+int nl_data_append(struct nl_data *data, void *buf, size_t size)
 {
 	if (size > 0) {
-		char *d_data = realloc(data->d_data, data->d_size + size);
-		if (!d_data)
+		data->d_data = realloc(data->d_data, data->d_size + size);
+		if (!data->d_data)
 			return -NLE_NOMEM;
 
 		if (buf)
-			memcpy(d_data + data->d_size, buf, size);
+			memcpy(data->d_data + data->d_size, buf, size);
 		else
-			memset(d_data + data->d_size, 0, size);
+			memset(data->d_data + data->d_size, 0, size);
 
-		data->d_data = d_data;
 		data->d_size += size;
 	}
 
@@ -152,11 +150,9 @@ void nl_data_free(struct nl_data *data)
  * @arg data		Abstract data object.
  * @return Data buffer or NULL if empty.
  */
-void *nl_data_get(const struct nl_data *data)
+void *nl_data_get(struct nl_data *data)
 {
-	if (data->d_size > 0)
-		return (void*)data->d_data;
-	return NULL;
+	return data->d_size > 0 ? data->d_data : NULL;
 }
 
 /**
@@ -164,7 +160,7 @@ void *nl_data_get(const struct nl_data *data)
  * @arg data		Abstract data object.
  * @return Size of data buffer.
  */
-size_t nl_data_get_size(const struct nl_data *data)
+size_t nl_data_get_size(struct nl_data *data)
 {
 	return data->d_size;
 }
@@ -184,10 +180,10 @@ size_t nl_data_get_size(const struct nl_data *data)
  *         a is found, respectively, to be less than, to match, or
  *         be greater than b.
  */
-int nl_data_cmp(const struct nl_data *a, const struct nl_data *b)
+int nl_data_cmp(struct nl_data *a, struct nl_data *b)
 {
-	const void *a_ = nl_data_get(a);
-	const void *b_ = nl_data_get(b);
+	void *a_ = nl_data_get(a);
+	void *b_ = nl_data_get(b);
 
 	if (a_ && b_)
 		return memcmp(a_, b_, nl_data_get_size(a));

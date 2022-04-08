@@ -1,4 +1,3 @@
-/* SPDX-License-Identifier: LGPL-2.1-only */
 /*
  * lib/route/qdisc.c            Queueing Disciplines
  *
@@ -521,7 +520,7 @@ static void qdisc_dump_details(struct rtnl_tc *tc, struct nl_dump_params *p)
 {
 	struct rtnl_qdisc *qdisc = (struct rtnl_qdisc *) tc;
 
-	nl_dump(p, "refcnt %u", qdisc->q_info);
+	nl_dump(p, "refcnt %u ", qdisc->q_info);
 }
 
 static struct rtnl_tc_type_ops qdisc_ops = {

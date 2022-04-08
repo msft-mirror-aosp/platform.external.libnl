@@ -1,4 +1,4 @@
-/*
+ /*
  * lib/route/link/ipvti.c	 IPVTI Link Info
  *
  *	This library is free software; you can redistribute it and/or
@@ -28,7 +28,6 @@
 #include <netlink/utils.h>
 #include <netlink/object.h>
 #include <netlink/route/rtnl.h>
-#include <netlink/route/link/ipvti.h>
 #include <netlink-private/route/link/api.h>
 #include <linux/if_tunnel.h>
 
@@ -48,7 +47,7 @@ struct ipvti_info
 	uint32_t   ipvti_mask;
 };
 
-static	struct nla_policy ipvti_policy[IFLA_VTI_MAX + 1] = {
+static	struct nla_policy ipvti_policy[IFLA_GRE_MAX + 1] = {
 	[IFLA_VTI_LINK]     = { .type = NLA_U32 },
 	[IFLA_VTI_IKEY]     = { .type = NLA_U32 },
 	[IFLA_VTI_OKEY]     = { .type = NLA_U32 },
@@ -60,15 +59,11 @@ static int ipvti_alloc(struct rtnl_link *link)
 {
 	struct ipvti_info *ipvti;
 
-	if (link->l_info)
-		memset(link->l_info, 0, sizeof(*ipvti));
-	else {
-		ipvti = calloc(1, sizeof(*ipvti));
-		if (!ipvti)
-			return -NLE_NOMEM;
+	ipvti = calloc(1, sizeof(*ipvti));
+	if (!ipvti)
+		return -NLE_NOMEM;
 
-		link->l_info = ipvti;
-	}
+	link->l_info = ipvti;
 
 	return 0;
 }
@@ -76,13 +71,13 @@ static int ipvti_alloc(struct rtnl_link *link)
 static int ipvti_parse(struct rtnl_link *link, struct nlattr *data,
 		       struct nlattr *xstats)
 {
-	struct nlattr *tb[IFLA_VTI_MAX + 1];
+	struct nlattr *tb[IFLA_IPTUN_MAX + 1];
 	struct ipvti_info *ipvti;
 	int err;
 
-	NL_DBG(3, "Parsing IPVTI link info\n");
+	NL_DBG(3, "Parsing IPVTI link info");
 
-	err = nla_parse_nested(tb, IFLA_VTI_MAX, data, ipvti_policy);
+	err = nla_parse_nested(tb, IFLA_GRE_MAX, data, ipvti_policy);
 	if (err < 0)
 		goto errout;
 
@@ -119,7 +114,7 @@ static int ipvti_parse(struct rtnl_link *link, struct nlattr *data,
 
 	err = 0;
 
-errout:
+ errout:
 	return err;
 }
 
@@ -171,16 +166,10 @@ static void ipvti_dump_details(struct rtnl_link *link, struct nl_dump_params *p)
 {
 	struct ipvti_info *ipvti = link->l_info;
 	char *name, addr[INET_ADDRSTRLEN];
-	struct rtnl_link *parent;
 
 	if (ipvti->ipvti_mask & IPVTI_ATTR_LINK) {
 		nl_dump(p, "      link ");
-
-		name = NULL;
-		parent = link_lookup(link->ce_cache, ipvti->link);
-		if (parent)
-			name = rtnl_link_get_name(parent);
-
+		name = rtnl_link_get_name(link);
 		if (name)
 			nl_dump_line(p, "%s\n", name);
 		else

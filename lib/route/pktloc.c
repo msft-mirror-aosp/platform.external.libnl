@@ -1,4 +1,3 @@
-/* SPDX-License-Identifier: LGPL-2.1-only */
 /*
  * lib/route/pktloc.c     Packet Location Aliasing
  *
@@ -102,15 +101,13 @@ static int read_pktlocs(void)
 	/* if stat fails, just try to read the file */
 	if (stat(path, &st) == 0) {
 		/* Don't re-read file if file is unchanged */
-		if (last_read == st.st_mtime) {
-			err = 0;
-			goto errout;
-		}
+		if (last_read == st.st_mtime)
+			return 0;
 	}
 
 	NL_DBG(2, "Reading packet location file \"%s\"\n", path);
 
-	if (!(fd = fopen(path, "re"))) {
+	if (!(fd = fopen(path, "r"))) {
 		err = -NLE_PKTLOC_FILE;
 		goto errout;
 	}

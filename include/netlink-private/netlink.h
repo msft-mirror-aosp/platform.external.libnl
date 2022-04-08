@@ -18,6 +18,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <fcntl.h>
+#include <math.h>
 #include <time.h>
 #include <stdarg.h>
 #include <ctype.h>
@@ -48,11 +49,11 @@
 #include <linux/pkt_sched.h>
 #include <linux/pkt_cls.h>
 #include <linux/gen_stats.h>
+#include <linux/ip_mp_alg.h>
 #include <linux/atm.h>
 #include <linux/ip.h>
 #include <linux/ipv6.h>
 #include <linux/snmp.h>
-#include <linux/xfrm.h>
 
 #ifndef DISABLE_PTHREADS
 #include <pthread.h>
@@ -69,11 +70,11 @@
 #define NSEC_PER_SEC	1000000000L
 
 struct trans_tbl {
-	uint64_t i;
+	int i;
 	const char *a;
 };
 
-#define __ADD(id, name) { .i = id, .a = #name }
+#define __ADD(id, name) { .i = id, .a = #name },
 
 struct trans_list {
 	int i;
@@ -84,14 +85,11 @@ struct trans_list {
 #ifdef NL_DEBUG
 #define NL_DBG(LVL,FMT,ARG...)						\
 	do {								\
-		if (LVL <= nl_debug) {					\
-			int _errsv = errno;				\
+		if (LVL <= nl_debug)					\
 			fprintf(stderr,					\
 				"DBG<" #LVL ">%20s:%-4u %s: " FMT,	\
 				__FILE__, __LINE__,			\
-				__func__, ##ARG);			\
-			errno = _errsv;					\
-		}							\
+				__PRETTY_FUNCTION__, ##ARG);		\
 	} while (0)
 #else /* NL_DEBUG */
 #define NL_DBG(LVL,FMT,ARG...) do { } while(0)
@@ -100,7 +98,7 @@ struct trans_list {
 #define BUG()                            				\
 	do {                                 				\
 		fprintf(stderr, "BUG at file position %s:%d:%s\n",  	\
-			__FILE__, __LINE__, __func__); 			\
+			__FILE__, __LINE__, __PRETTY_FUNCTION__); 	\
 		assert(0);						\
 	} while (0)
 
@@ -114,7 +112,7 @@ struct trans_list {
 #define APPBUG(msg)							\
 	do {								\
 		fprintf(stderr, "APPLICATION BUG: %s:%d:%s: %s\n",	\
-			__FILE__, __LINE__, __func__, msg);		\
+			__FILE__, __LINE__, __PRETTY_FUNCTION__, msg);	\
 		assert(0);						\
 	} while(0)
 
@@ -134,9 +132,8 @@ extern char *__flags2str(int, char *, size_t, const struct trans_tbl *, size_t);
 extern int __str2flags(const char *, const struct trans_tbl *, size_t);
 
 extern void dump_from_ops(struct nl_object *, struct nl_dump_params *);
-extern struct rtnl_link *link_lookup(struct nl_cache *cache, int ifindex);
 
-static inline int nl_cb_call(struct nl_cb *cb, enum nl_cb_type type, struct nl_msg *msg)
+static inline int nl_cb_call(struct nl_cb *cb, int type, struct nl_msg *msg)
 {
 	int ret;
 
@@ -159,14 +156,14 @@ static inline int nl_cb_call(struct nl_cb *cb, enum nl_cb_type type, struct nl_m
 #define __deprecated __attribute__ ((deprecated))
 
 #define min(x,y) ({ \
-	__typeof__(x) _x = (x);	\
-	__typeof__(y) _y = (y);	\
+	typeof(x) _x = (x);	\
+	typeof(y) _y = (y);	\
 	(void) (&_x == &_y);		\
 	_x < _y ? _x : _y; })
 
 #define max(x,y) ({ \
-	__typeof__(x) _x = (x);	\
-	__typeof__(y) _y = (y);	\
+	typeof(x) _x = (x);	\
+	typeof(y) _y = (y);	\
 	(void) (&_x == &_y);		\
 	_x > _y ? _x : _y; })
 
@@ -186,7 +183,7 @@ static inline void rtnl_copy_ratespec(struct rtnl_ratespec *dst,
 	dst->rs_overhead = src->overhead;
 	dst->rs_cell_align = src->cell_align;
 	dst->rs_mpu = src->mpu;
-	dst->rs_rate64 = src->rate;
+	dst->rs_rate = src->rate;
 }
 
 static inline void rtnl_rcopy_ratespec(struct tc_ratespec *dst,
@@ -196,10 +193,10 @@ static inline void rtnl_rcopy_ratespec(struct tc_ratespec *dst,
 	dst->overhead = src->rs_overhead;
 	dst->cell_align = src->rs_cell_align;
 	dst->mpu = src->rs_mpu;
-	dst->rate = src->rs_rate64 > 0xFFFFFFFFull ? 0xFFFFFFFFull : (uint32_t) src->rs_rate64;
+	dst->rate = src->rs_rate;
 }
 
-static inline const char *nl_cache_name(struct nl_cache *cache)
+static inline char *nl_cache_name(struct nl_cache *cache)
 {
 	return cache->c_ops ? cache->c_ops->co_name : "unknown";
 }
@@ -275,15 +272,5 @@ static inline void nl_write_unlock(pthread_rwlock_t *lock)
 #define nl_write_lock(LOCK) do { } while(0)
 #define nl_write_unlock(LOCK) do { } while(0)
 #endif
-
-static inline int rtnl_tc_calc_txtime64(int bufsize, uint64_t rate)
-{
-	return ((double) bufsize / (double) rate) * 1000000.0;
-}
-
-static inline int rtnl_tc_calc_bufsize64(int txtime, uint64_t rate)
-{
-	return ((double) txtime * (double) rate) / 1000000.0;
-}
 
 #endif

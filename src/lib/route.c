@@ -1,4 +1,3 @@
-/* SPDX-License-Identifier: LGPL-2.1-only */
 /*
  * src/lib/route.c     CLI Route Helpers
  *
@@ -142,13 +141,11 @@ void nl_cli_route_parse_nexthop(struct rtnl_route *route, char *subopts,
 		NH_DEV,
 		NH_VIA,
 		NH_WEIGHT,
-		NH_AS,
 	};
 	static char *const tokens[] = {
 		"dev",
 		"via",
 		"weight",
-		"as",
 		NULL,
 	};
 	struct rtnl_nexthop *nh;
@@ -178,20 +175,8 @@ void nl_cli_route_parse_nexthop(struct rtnl_route *route, char *subopts,
 			break;
 
 		case NH_VIA:
-			if (rtnl_route_get_family(route) == AF_MPLS) {
-				addr = nl_cli_addr_parse(arg, 0);
-				rtnl_route_nh_set_via(nh, addr);
-			} else {
-				addr = nl_cli_addr_parse(arg,rtnl_route_get_family(route));
-				rtnl_route_nh_set_gateway(nh, addr);
-			}
-			nl_addr_put(addr);
-			break;
-
-		case NH_AS:
-			addr = nl_cli_addr_parse(arg,
-						 rtnl_route_get_family(route));
-			rtnl_route_nh_set_newdst(nh, addr);
+			addr = nl_cli_addr_parse(arg,rtnl_route_get_family(route));
+			rtnl_route_nh_set_gateway(nh, addr);
 			nl_addr_put(addr);
 			break;
 

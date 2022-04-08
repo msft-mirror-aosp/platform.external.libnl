@@ -1,4 +1,3 @@
-/* SPDX-License-Identifier: GPL-2.0+ WITH Linux-syscall-note */
 /*
  * INET		An implementation of the TCP/IP protocol suite for the LINUX
  *		operating system.  INET is implemented using the  BSD Socket
@@ -15,8 +14,8 @@
  *		as published by the Free Software Foundation; either version
  *		2 of the License, or (at your option) any later version.
  */
-#ifndef _LINUX_IP_H
-#define _LINUX_IP_H
+#ifndef _UAPI_LINUX_IP_H
+#define _UAPI_LINUX_IP_H
 #include <linux/types.h>
 #include <asm/byteorder.h>
 
@@ -165,13 +164,9 @@ enum
 	IPV4_DEVCONF_ROUTE_LOCALNET,
 	IPV4_DEVCONF_IGMPV2_UNSOLICITED_REPORT_INTERVAL,
 	IPV4_DEVCONF_IGMPV3_UNSOLICITED_REPORT_INTERVAL,
-	IPV4_DEVCONF_IGNORE_ROUTES_WITH_LINKDOWN,
-	IPV4_DEVCONF_DROP_UNICAST_IN_L2_MULTICAST,
-	IPV4_DEVCONF_DROP_GRATUITOUS_ARP,
-	IPV4_DEVCONF_BC_FORWARDING,
 	__IPV4_DEVCONF_MAX
 };
 
 #define IPV4_DEVCONF_MAX (__IPV4_DEVCONF_MAX - 1)
 
-#endif /* _LINUX_IP_H */
+#endif /* _UAPI_LINUX_IP_H */

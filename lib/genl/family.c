@@ -1,4 +1,3 @@
-/* SPDX-License-Identifier: LGPL-2.1-only */
 /*
  * lib/genl/family.c		Generic Netlink Family
  *
@@ -24,8 +23,6 @@
 #include <netlink/genl/genl.h>
 #include <netlink/genl/family.h>
 #include <netlink/utils.h>
-
-#include "netlink-private/utils.h"
 
 /** @cond SKIP */
 #define FAMILY_ATTR_ID		0x01
@@ -99,10 +96,10 @@ static void family_dump_line(struct nl_object *obj, struct nl_dump_params *p)
 }
 
 static const struct trans_tbl ops_flags[] = {
-	__ADD(GENL_ADMIN_PERM, admin_perm),
-	__ADD(GENL_CMD_CAP_DO, has_doit),
-	__ADD(GENL_CMD_CAP_DUMP, has_dump),
-	__ADD(GENL_CMD_CAP_HASPOL, has_policy),
+	__ADD(GENL_ADMIN_PERM, admin_perm)
+	__ADD(GENL_CMD_CAP_DO, has_doit)
+	__ADD(GENL_CMD_CAP_DUMP, has_dump)
+	__ADD(GENL_CMD_CAP_HASPOL, has_policy)
 };
 
 static char *ops_flags2str(int flags, char *buf, size_t len)
@@ -150,12 +147,12 @@ static void family_dump_stats(struct nl_object *obj, struct nl_dump_params *p)
 	family_dump_details(obj, p);
 }
 
-static uint64_t family_compare(struct nl_object *_a, struct nl_object *_b,
-			  uint64_t attrs, int flags)
+static int family_compare(struct nl_object *_a, struct nl_object *_b,
+			  uint32_t attrs, int flags)
 {
 	struct genl_family *a = (struct genl_family *) _a;
 	struct genl_family *b = (struct genl_family *) _b;
-	uint64_t diff = 0;
+	int diff = 0;
 
 #define FAM_DIFF(ATTR, EXPR) ATTR_DIFF(attrs, FAMILY_ATTR_##ATTR, a, b, EXPR)
 
@@ -218,7 +215,7 @@ unsigned int genl_family_get_id(struct genl_family *family)
 	if (family->ce_mask & FAMILY_ATTR_ID)
 		return family->gf_id;
 	else
-		return 0;
+		return GENL_ID_GENERATE;
 }
 
 /**
@@ -333,7 +330,7 @@ uint32_t genl_family_get_maxattr(struct genl_family *family)
 	if (family->ce_mask & FAMILY_ATTR_MAXATTR)
 		return family->gf_maxattr;
 	else
-		return 0;
+		return family->gf_maxattr;
 }
 
 void genl_family_set_maxattr(struct genl_family *family, uint32_t maxattr)
@@ -367,20 +364,16 @@ int genl_family_add_op(struct genl_family *family, int id, int flags)
 }
 
 int genl_family_add_grp(struct genl_family *family, uint32_t id,
-                        const char *name)
+	       		const char *name)
 {
-	struct genl_family_grp *grp;
-
-	if (   !name
-	    || strlen (name) >= GENL_NAMSIZ)
-		return -NLE_INVAL;
+	struct genl_family_grp *grp;  
 
 	grp = calloc(1, sizeof(*grp));
 	if (grp == NULL)
 		return -NLE_NOMEM;
 
 	grp->id = id;
-	_nl_strncpy(grp->name, name, GENL_NAMSIZ);
+	strncpy(grp->name, name, GENL_NAMSIZ - 1);
 
 	nl_list_add_tail(&grp->list, &family->gf_mc_grps);
 

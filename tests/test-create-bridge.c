@@ -2,12 +2,10 @@
 #include <netlink/route/link.h>
 #include <netlink/route/link/bridge.h>
 
-#include <linux/netlink.h>
-
 #define TEST_BRIDGE_NAME "testbridge"
 #define TEST_INTERFACE_NAME "testtap1"
 
-static int create_bridge(struct nl_sock *sk, struct nl_cache *link_cache, const char *name) {
+int create_bridge(struct nl_sock *sk, struct nl_cache *link_cache, const char *name) {
 	struct rtnl_link *link;
 	int err;
 
@@ -31,7 +29,6 @@ int main(int argc, char *argv[])
 	struct rtnl_link *link;
 	struct nl_cache *link_cache;
 	struct nl_sock *sk;
-	struct rtnl_link *ltap;
 	int err;
 
 	sk = nl_socket_alloc();
@@ -53,7 +50,7 @@ int main(int argc, char *argv[])
 	nl_cache_refill(sk, link_cache);
 
 	link = rtnl_link_get_by_name(link_cache, TEST_BRIDGE_NAME);
-	ltap = rtnl_link_get_by_name(link_cache, TEST_INTERFACE_NAME);
+	struct rtnl_link *ltap = rtnl_link_get_by_name(link_cache, TEST_INTERFACE_NAME);
 	if (!ltap) {
 		fprintf(stderr, "You should create a tap interface before lunch this test (# tunctl -t %s)\n", TEST_INTERFACE_NAME);
 		return -1;
@@ -68,11 +65,6 @@ int main(int argc, char *argv[])
 		fprintf(stderr, "Link is not a bridge\n");
 		return -2;
 	}
-
-	rtnl_link_put(ltap);
-	nl_cache_refill(sk, link_cache);
-	ltap = rtnl_link_get_by_name(link_cache, TEST_INTERFACE_NAME);
-
 	if(rtnl_link_get_master(ltap) <= 0) {
 		fprintf(stderr, "Interface is not attached to a bridge\n");
 		return -3;

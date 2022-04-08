@@ -1,4 +1,3 @@
-/* SPDX-License-Identifier: LGPL-2.1-only */
 /*
  * src/lib/neigh.c     CLI Neighbour Helpers
  *

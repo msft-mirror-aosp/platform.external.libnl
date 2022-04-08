@@ -19,8 +19,6 @@ extern "C" {
 #endif /* __cplusplus */
 
 struct idiagnl_msg;
-
-/* @deprecated: DO NOT USE this variable. */
 extern struct nl_object_ops  idiagnl_msg_obj_ops;
 
 extern struct idiagnl_msg * idiagnl_msg_alloc(void);

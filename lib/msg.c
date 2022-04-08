@@ -1,4 +1,3 @@
-/* SPDX-License-Identifier: LGPL-2.1-only */
 /*
  * lib/msg.c		Netlink Messages Interface
  *
@@ -28,7 +27,6 @@
  */
 
 #include <netlink-private/netlink.h>
-#include <netlink-private/utils.h>
 #include <netlink/netlink.h>
 #include <netlink/utils.h>
 #include <netlink/cache.h>
@@ -213,7 +211,7 @@ struct nlmsghdr *nlmsg_next(struct nlmsghdr *nlh, int *remaining)
  * See nla_parse()
  */
 int nlmsg_parse(struct nlmsghdr *nlh, int hdrlen, struct nlattr *tb[],
-		int maxtype, const struct nla_policy *policy)
+		int maxtype, struct nla_policy *policy)
 {
 	if (!nlmsg_valid_hdr(nlh, hdrlen))
 		return -NLE_MSG_TOOSHORT;
@@ -244,7 +242,7 @@ struct nlattr *nlmsg_find_attr(struct nlmsghdr *nlh, int hdrlen, int attrtype)
  * @arg policy		validation policy
  */
 int nlmsg_validate(struct nlmsghdr *nlh, int hdrlen, int maxtype,
-		   const struct nla_policy *policy)
+		   struct nla_policy *policy)
 {
 	if (!nlmsg_valid_hdr(nlh, hdrlen))
 		return -NLE_MSG_TOOSHORT;
@@ -351,8 +349,6 @@ struct nl_msg *nlmsg_alloc_simple(int nlmsgtype, int flags)
 	struct nlmsghdr nlh = {
 		.nlmsg_type = nlmsgtype,
 		.nlmsg_flags = flags,
-		.nlmsg_seq = NL_AUTO_SEQ,
-		.nlmsg_pid = NL_AUTO_PID,
 	};
 
 	msg = nlmsg_inherit(&nlh);
@@ -410,7 +406,7 @@ struct nl_msg *nlmsg_convert(struct nlmsghdr *hdr)
  */
 void *nlmsg_reserve(struct nl_msg *n, size_t len, int pad)
 {
-	char *buf = (char *) n->nm_nlh;
+	void *buf = n->nm_nlh;
 	size_t nlmsg_len = n->nm_nlh->nlmsg_len;
 	size_t tlen;
 
@@ -644,10 +640,10 @@ struct ucred *nlmsg_get_creds(struct nl_msg *msg)
  */
 
 static const struct trans_tbl nl_msgtypes[] = {
-	__ADD(NLMSG_NOOP,NOOP),
-	__ADD(NLMSG_ERROR,ERROR),
-	__ADD(NLMSG_DONE,DONE),
-	__ADD(NLMSG_OVERRUN,OVERRUN),
+	__ADD(NLMSG_NOOP,NOOP)
+	__ADD(NLMSG_ERROR,ERROR)
+	__ADD(NLMSG_DONE,DONE)
+	__ADD(NLMSG_OVERRUN,OVERRUN)
 };
 
 char *nl_nlmsgtype2str(int type, char *buf, size_t size)
@@ -838,7 +834,7 @@ static void print_genl_hdr(FILE *ofd, void *start)
 static void *print_genl_msg(struct nl_msg *msg, FILE *ofd, struct nlmsghdr *hdr,
 			    struct nl_cache_ops *ops, int *payloadlen)
 {
-	char *data = nlmsg_data(hdr);
+	void *data = nlmsg_data(hdr);
 
 	if (*payloadlen < GENL_HDRLEN)
 		return data;
@@ -901,7 +897,7 @@ static void dump_attrs(FILE *ofd, struct nlattr *attrs, int attrlen,
 			prefix_line(ofd, prefix);
 			fprintf(ofd, "  [PADDING] %d octets\n",
 				padlen);
-			dump_hex(ofd, (char *) nla_data(nla) + alen,
+			dump_hex(ofd, nla_data(nla) + alen,
 				 padlen, prefix);
 		}
 	}
@@ -920,10 +916,11 @@ static void dump_error_msg(struct nl_msg *msg, FILE *ofd)
 	fprintf(ofd, "  [ERRORMSG] %zu octets\n", sizeof(*err));
 
 	if (nlmsg_len(hdr) >= sizeof(*err)) {
+		char buf[256];
 		struct nl_msg *errmsg;
 
 		fprintf(ofd, "    .error = %d \"%s\"\n", err->error,
-			nl_strerror_l(-err->error));
+			strerror_r(-err->error, buf, sizeof(buf)));
 		fprintf(ofd, "  [ORIGINAL MESSAGE] %zu octets\n", sizeof(*hdr));
 
 		errmsg = nlmsg_inherit(&err->msg);

@@ -1,4 +1,3 @@
-/* SPDX-License-Identifier: LGPL-2.1-only */
 /*
  * lib/idiag/idiagnl_req_obj.c Inet Diag Request Object
  *
@@ -69,7 +68,7 @@ uint32_t idiagnl_req_get_ifindex(const struct idiagnl_req *req)
 
 void idiagnl_req_set_ifindex(struct idiagnl_req *req, uint32_t ifindex)
 {
-	req->idiag_ifindex = ifindex;
+	req->idiag_states = ifindex;
 }
 
 uint32_t idiagnl_req_get_states(const struct idiagnl_req *req)

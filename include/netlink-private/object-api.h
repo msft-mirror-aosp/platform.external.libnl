@@ -126,8 +126,6 @@ extern "C" {
  * #define MY_ATTR_FOO		(1<<0)
  * #define MY_ATTR_BAR		(1<<1)
  *
- * // Bit 31 for attributes is reserved for 32-bit API.
- *
  * // When assigning an optional attribute to the object, make sure
  * // to mark its availability.
  * my_obj->foo = 123123;
@@ -191,7 +189,7 @@ extern "C" {
 	struct nl_list_head	ce_list;	\
 	int			ce_msgtype;	\
 	int			ce_flags;	\
-	uint64_t		ce_mask;
+	uint32_t		ce_mask;
 
 struct nl_object
 {
@@ -260,7 +258,7 @@ struct nl_object
  * @endcode
  */
 #define ATTR_DIFF(LIST, ATTR, A, B, EXPR) \
-({	uint64_t diff = 0; \
+({	int diff = 0; \
 	if (((LIST) & (ATTR)) && ATTR_MISMATCH(A, B, ATTR, EXPR)) \
 		diff = ATTR; \
 	diff; })
@@ -335,8 +333,8 @@ struct nl_object_ops
 	 * The function must return a bitmask with the relevant bit
 	 * set for each attribute that mismatches.
 	 */
-	uint64_t (*oo_compare)(struct nl_object *, struct nl_object *,
-			       uint64_t, int);
+	int   (*oo_compare)(struct nl_object *, struct nl_object *,
+			    uint32_t, int);
 
 
 	/**

@@ -1,4 +1,3 @@
-/* SPDX-License-Identifier: LGPL-2.1-only */
 /*
  * src/nl-monitor.c     Monitor events
  *
@@ -13,66 +12,7 @@
 #include <netlink/cli/utils.h>
 #include <netlink/cli/link.h>
 
-#include <linux/rtnetlink.h>
-
-static const struct {
-	enum rtnetlink_groups gr_id;
-	const char* gr_name;
-} known_groups[] = {
-	{ RTNLGRP_LINK, "link" },
-	{ RTNLGRP_NOTIFY, "notify" },
-	{ RTNLGRP_NEIGH, "neigh" },
-	{ RTNLGRP_TC, "tc" },
-	{ RTNLGRP_IPV4_IFADDR, "ipv4-ifaddr" },
-	{ RTNLGRP_IPV4_MROUTE, "ipv4-mroute" },
-	{ RTNLGRP_IPV4_ROUTE, "ipv4-route" },
-	{ RTNLGRP_IPV6_IFADDR, "ipv6-ifaddr" },
-	{ RTNLGRP_IPV6_MROUTE, "ipv6-mroute" },
-	{ RTNLGRP_IPV6_ROUTE, "ipv6-route" },
-	{ RTNLGRP_IPV6_IFINFO, "ipv6-ifinfo" },
-	{ RTNLGRP_DECnet_IFADDR, "decnet-ifaddr" },
-	{ RTNLGRP_DECnet_ROUTE, "decnet-route" },
-	{ RTNLGRP_IPV6_PREFIX, "ipv6-prefix" },
-	{ RTNLGRP_IPV4_NETCONF, "ipv4-netconf" },
-	{ RTNLGRP_IPV6_NETCONF, "ipv6-netconf" },
-	{ RTNLGRP_MPLS_NETCONF, "mpls-netconf" },
-	{ RTNLGRP_NONE, NULL }
-};
-
 static void obj_input(struct nl_object *obj, void *arg)
-{
-	nl_object_dump(obj, arg);
-}
-
-static int event_input(struct nl_msg *msg, void *arg)
-{
-	if (nl_msg_parse(msg, &obj_input, arg) < 0)
-		fprintf(stderr, "<<EVENT>> Unknown message type\n");
-
-	/* Exit nl_recvmsgs_def() and return to the main select() */
-	return NL_STOP;
-}
-
-static void print_usage(void)
-{
-	int i;
-
-        printf(
-	"Usage: nl-monitor [OPTION] [<groups>]\n"
-	"\n"
-	"Options\n"
-	" -f, --format=TYPE     Output format { brief | details | stats }\n"
-	" -h, --help            Show this help.\n"
-	"\n"
-        );
-	printf("Known groups:");
-	for (i = 0; known_groups[i].gr_id != RTNLGRP_NONE; i++)
-		printf(" %s", known_groups[i].gr_name);
-	printf("\n");
-        exit(0);
-}
-
-int main(int argc, char *argv[])
 {
 	struct nl_dump_params dp = {
 		.dp_type = NL_DUMP_STATS,
@@ -80,38 +20,63 @@ int main(int argc, char *argv[])
 		.dp_dump_msgtype = 1,
 	};
 
+	nl_object_dump(obj, &dp);
+}
+
+static int event_input(struct nl_msg *msg, void *arg)
+{
+	if (nl_msg_parse(msg, &obj_input, NULL) < 0)
+		fprintf(stderr, "<<EVENT>> Unknown message type\n");
+
+	/* Exit nl_recvmsgs_def() and return to the main select() */
+	return NL_STOP;
+}
+
+int main(int argc, char *argv[])
+{
 	struct nl_sock *sock;
+	struct nl_cache *link_cache;
 	int err = 1;
 	int i, idx;
 
+	static const struct {
+		enum rtnetlink_groups gr_id;
+		const char* gr_name;
+	} known_groups[] = {
+		{ RTNLGRP_LINK, "link" },
+		{ RTNLGRP_NOTIFY, "notify" },
+		{ RTNLGRP_NEIGH, "neigh" },
+		{ RTNLGRP_TC, "tc" },
+		{ RTNLGRP_IPV4_IFADDR, "ipv4-ifaddr" },
+		{ RTNLGRP_IPV4_MROUTE, "ipv4-mroute" },
+		{ RTNLGRP_IPV4_ROUTE, "ipv4-route" },
+		{ RTNLGRP_IPV6_IFADDR, "ipv6-ifaddr" },
+		{ RTNLGRP_IPV6_MROUTE, "ipv6-mroute" },
+		{ RTNLGRP_IPV6_ROUTE, "ipv6-route" },
+		{ RTNLGRP_IPV6_IFINFO, "ipv6-ifinfo" },
+		{ RTNLGRP_DECnet_IFADDR, "decnet-ifaddr" },
+		{ RTNLGRP_DECnet_ROUTE, "decnet-route" },
+		{ RTNLGRP_IPV6_PREFIX, "ipv6-prefix" },
+		{ RTNLGRP_NONE, NULL }
+	};
+
 	sock = nl_cli_alloc_socket();
 	nl_socket_disable_seq_check(sock);
-	nl_socket_modify_cb(sock, NL_CB_VALID, NL_CB_CUSTOM, event_input, &dp);
+	nl_socket_modify_cb(sock, NL_CB_VALID, NL_CB_CUSTOM, event_input, NULL);
 
-	for (;;) {
-		int c, optidx = 0;
-		static struct option long_opts[] = {
-			{ "format", 1, 0, 'f' },
-			{ 0, 0, 0, 0 }
-		};
+	if (argc > 1 && !strcasecmp(argv[1], "-h")) {
+		printf("Usage: nl-monitor [<groups>]\n");
 
-		c = getopt_long(argc, argv, "f:h", long_opts, &optidx);
-		if (c == -1)
-                        break;
-
-                switch (c) {
-                case 'f':
-			dp.dp_type = nl_cli_parse_dumptype(optarg);
-			break;
-		default:
-			print_usage();
-			break;
-		}
+		printf("Known groups:");
+		for (i = 0; known_groups[i].gr_id != RTNLGRP_NONE; i++)
+			printf(" %s", known_groups[i].gr_name);
+		printf("\n");
+		return 2;
 	}
 
 	nl_cli_connect(sock, NETLINK_ROUTE);
 
-	for (idx = optind; argc > idx; idx++) {
+	for (idx = 1; argc > idx; idx++) {
 		for (i = 0; known_groups[i].gr_id != RTNLGRP_NONE; i++) {
 			if (!strcmp(argv[idx], known_groups[i].gr_name)) {
 
@@ -127,7 +92,7 @@ int main(int argc, char *argv[])
 			fprintf(stderr, "Warning: Unknown group: %s\n", argv[idx]);
 	}
 
-	nl_cli_link_alloc_cache(sock);
+	link_cache = nl_cli_link_alloc_cache(sock);
 
 	while (1) {
 		fd_set rfds;

@@ -1,4 +1,3 @@
-/* SPDX-License-Identifier: LGPL-2.1-only */
 /*
  * lib/netfilter/log_msg.c	Netfilter Log Message
  *
@@ -27,7 +26,19 @@
 #include <netlink/attr.h>
 #include <netlink/netfilter/nfnl.h>
 #include <netlink/netfilter/log_msg.h>
-#include <netlink-private/utils.h>
+#include <byteswap.h>
+
+#if __BYTE_ORDER == __BIG_ENDIAN
+static uint64_t ntohll(uint64_t x)
+{
+	return x;
+}
+#elif __BYTE_ORDER == __LITTLE_ENDIAN
+static uint64_t ntohll(uint64_t x)
+{
+	return bswap_64(x);
+}
+#endif
 
 static struct nla_policy log_msg_policy[NFULA_MAX+1] = {
 	[NFULA_PACKET_HDR]		= {

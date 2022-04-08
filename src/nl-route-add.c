@@ -1,4 +1,3 @@
-/* SPDX-License-Identifier: LGPL-2.1-only */
 /*
  * src/nl-route-add.c     Route addition utility
  *
@@ -13,8 +12,6 @@
 #include <netlink/cli/utils.h>
 #include <netlink/cli/route.h>
 #include <netlink/cli/link.h>
-
-#include <linux/netlink.h>
 
 static int quiet = 0;
 static struct nl_cache *link_cache, *route_cache;

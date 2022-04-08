@@ -97,8 +97,6 @@ extern uint32_t		rtnl_tc_get_parent(struct rtnl_tc *);
 extern int		rtnl_tc_set_kind(struct rtnl_tc *, const char *);
 extern char *		rtnl_tc_get_kind(struct rtnl_tc *);
 extern uint64_t		rtnl_tc_get_stat(struct rtnl_tc *, enum rtnl_tc_stat);
-extern char *		rtnl_tc_stat2str(enum rtnl_tc_stat, char *, size_t);
-extern int		rtnl_tc_str2stat(const char *);
 
 extern int		rtnl_tc_calc_txtime(int, int);
 extern int		rtnl_tc_calc_bufsize(int, int);
@@ -109,8 +107,6 @@ extern char *		rtnl_tc_handle2str(uint32_t, char *, size_t);
 extern int		rtnl_tc_str2handle(const char *, uint32_t *);
 extern int		rtnl_classid_generate(const char *, uint32_t *,
 					      uint32_t);
-extern void		rtnl_tc_set_chain(struct rtnl_tc *, uint32_t);
-extern int              rtnl_tc_get_chain(struct rtnl_tc *, uint32_t *);
 
 #ifdef __cplusplus
 }

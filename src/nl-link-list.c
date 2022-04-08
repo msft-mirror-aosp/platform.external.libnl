@@ -1,4 +1,3 @@
-/* SPDX-License-Identifier: LGPL-2.1-only */
 /*
  * src/nl-link-dump.c	Dump link attributes
  *
@@ -12,8 +11,6 @@
 
 #include <netlink/cli/utils.h>
 #include <netlink/cli/link.h>
-
-#include <linux/netlink.h>
 
 static void print_usage(void)
 {

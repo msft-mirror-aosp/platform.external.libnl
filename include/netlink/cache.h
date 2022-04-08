@@ -35,8 +35,6 @@ enum {
 
 struct nl_cache;
 typedef void (*change_func_t)(struct nl_cache *, struct nl_object *, int, void *);
-typedef void (*change_func_v2_t)(struct nl_cache *, struct nl_object *old_obj,
-	      struct nl_object *new_obj, uint64_t, int, void *);
 
 /**
  * @ingroup cache
@@ -80,8 +78,6 @@ extern int			nl_cache_refill(struct nl_sock *,
 						struct nl_cache *);
 extern int			nl_cache_pickup(struct nl_sock *,
 						struct nl_cache *);
-extern int			nl_cache_pickup_checkdup(struct nl_sock *,
-						struct nl_cache *);
 extern int			nl_cache_resync(struct nl_sock *,
 						struct nl_cache *,
 						change_func_t,
@@ -90,10 +86,6 @@ extern int			nl_cache_include(struct nl_cache *,
 						 struct nl_object *,
 						 change_func_t,
 						 void *);
-extern int			nl_cache_include_v2(struct nl_cache *,
-						    struct nl_object *,
-						    change_func_v2_t,
-						    void *);
 extern void			nl_cache_set_arg1(struct nl_cache *, int);
 extern void			nl_cache_set_arg2(struct nl_cache *, int);
 extern void			nl_cache_set_flags(struct nl_cache *, unsigned int);
@@ -160,9 +152,6 @@ extern int			nl_cache_mngr_add(struct nl_cache_mngr *,
 extern int			nl_cache_mngr_add_cache(struct nl_cache_mngr *mngr,
 							struct nl_cache *cache,
 							change_func_t cb, void *data);
-extern int			nl_cache_mngr_add_cache_v2(struct nl_cache_mngr *mngr,
-							   struct nl_cache *cache,
-							   change_func_v2_t cb, void *data);
 extern int			nl_cache_mngr_get_fd(struct nl_cache_mngr *);
 extern int			nl_cache_mngr_poll(struct nl_cache_mngr *,
 						   int);
@@ -173,8 +162,6 @@ extern void			nl_cache_mngr_free(struct nl_cache_mngr *);
 
 extern void			nl_cache_ops_get(struct nl_cache_ops *);
 extern void			nl_cache_ops_put(struct nl_cache_ops *);
-extern void			nl_cache_ops_set_flags(struct nl_cache_ops *,
-						       unsigned int);
 
 #ifdef __cplusplus
 }

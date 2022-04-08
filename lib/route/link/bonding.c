@@ -22,7 +22,6 @@
 
 #include <netlink-private/netlink.h>
 #include <netlink/netlink.h>
-#include <netlink/route/link/bonding.h>
 #include <netlink-private/route/link/api.h>
 
 /**

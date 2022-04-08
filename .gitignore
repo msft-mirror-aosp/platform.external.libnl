@@ -11,7 +11,6 @@ Makefile.in
 defs.h.in
 defs.h.in~
 /lib/stamp-h1
-test-suite.log
 
 /libnl-1.pc
 /lib/defs.h
@@ -25,3 +24,4 @@ cscope.*
 /configure
 /libtool
 /*.pc
+/libnl.sym
