@@ -18,15 +18,20 @@
  * ~~~~
  */
 
-#include <netlink-private/netlink.h>
-#include <netlink-private/utils.h>
+#include "nl-default.h"
+
+#include <locale.h>
+
+#include <linux/socket.h>
+#include <linux/if_arp.h>
+
 #include <netlink/netlink.h>
 #include <netlink/utils.h>
-#include <linux/socket.h>
-#include <stdlib.h> /* exit() */
-#ifdef HAVE_STRERROR_L
-#include <locale.h>
-#endif
+
+#include "nl-core.h"
+#include "nl-priv-dynamic-core/object-api.h"
+#include "nl-priv-dynamic-core/nl-core.h"
+#include "nl-aux-core/nl-core.h"
 
 /**
  * Global variable indicating the desired level of debugging output.
@@ -52,7 +57,7 @@ struct nl_dump_params nl_debug_dp = {
 	.dp_type = NL_DUMP_DETAILS,
 };
 
-static void __init nl_debug_init(void)
+static void _nl_init nl_debug_init(void)
 {
 	char *nldbg, *end;
 
@@ -115,6 +120,63 @@ int __nl_read_num_str_file(const char *path, int (*cb)(long, const char *))
 	fclose(fd);
 
 	return 0;
+}
+
+struct trans_list {
+	int i;
+	char *a;
+	struct nl_list_head list;
+};
+
+int nl_getprotobyname(const char *name)
+{
+	const struct protoent *result;
+
+#if HAVE_DECL_GETPROTOBYNAME_R
+	struct protoent result_buf;
+	char buf[2048];
+	int r;
+
+	r = getprotobyname_r(name, &result_buf, buf, sizeof(buf),
+			     (struct protoent **)&result);
+	if (r != 0 || result != &result_buf)
+		result = NULL;
+#else
+	result = getprotobyname(name);
+#endif
+
+	if (!result)
+		return -1;
+
+	if (result->p_proto < 0 || result->p_proto > UINT8_MAX)
+		return -1;
+	return (uint8_t)result->p_proto;
+}
+
+bool nl_getprotobynumber(int proto, char *out_name, size_t name_len)
+{
+	const struct protoent *result;
+
+#if HAVE_DECL_GETPROTOBYNUMBER_R
+	struct protoent result_buf;
+	char buf[2048];
+	int r;
+
+	r = getprotobynumber_r(proto, &result_buf, buf, sizeof(buf),
+			       (struct protoent **)&result);
+	if (r != 0 || result != &result_buf)
+		result = NULL;
+#else
+	result = getprotobynumber(proto);
+#endif
+
+	if (!result)
+		return false;
+
+	if (strlen(result->p_name) >= name_len)
+		return false;
+	strcpy(out_name, result->p_name);
+	return true;
 }
 
 const char *nl_strerror_l(int err)
@@ -859,12 +921,8 @@ int nl_str2ether_proto(const char *name)
 
 char *nl_ip_proto2str(int proto, char *buf, size_t len)
 {
-	struct protoent *p = getprotobynumber(proto);
-
-	if (p) {
-		snprintf(buf, len, "%s", p->p_name);
+	if (nl_getprotobynumber(proto, buf, len))
 		return buf;
-	}
 
 	snprintf(buf, len, "0x%x", proto);
 	return buf;
@@ -872,15 +930,19 @@ char *nl_ip_proto2str(int proto, char *buf, size_t len)
 
 int nl_str2ip_proto(const char *name)
 {
-	struct protoent *p = getprotobyname(name);
 	unsigned long l;
 	char *end;
+	int p;
 
-	if (p)
-		return p->p_proto;
+	if (!name)
+		return -NLE_INVAL;
+
+	p = nl_getprotobyname(name);
+	if (p >= 0)
+		return p;
 
 	l = strtoul(name, &end, 0);
-	if (l == ULONG_MAX || *end != '\0')
+	if (name == end || *end != '\0' || l > (unsigned long)INT_MAX)
 		return -NLE_OBJ_NOTFOUND;
 
 	return (int) l;
@@ -1221,8 +1283,8 @@ int nl_has_capability (int capability)
 			NL_CAPABILITY_VERSION_3_6_0),
 		_NL_SET (4,
 			NL_CAPABILITY_VERSION_3_7_0,
-			0,
-			0,
+			NL_CAPABILITY_VERSION_3_8_0,
+			NL_CAPABILITY_VERSION_3_9_0,
 			0,
 			0,
 			0,
