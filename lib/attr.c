@@ -3,13 +3,18 @@
  * Copyright (c) 2003-2013 Thomas Graf <tgraf@suug.ch>
  */
 
-#include <netlink-private/netlink.h>
+#include "nl-default.h"
+
+#include <linux/socket.h>
+
 #include <netlink/netlink.h>
 #include <netlink/utils.h>
 #include <netlink/addr.h>
 #include <netlink/attr.h>
 #include <netlink/msg.h>
-#include <linux/socket.h>
+
+#include "nl-priv-dynamic-core/nl-core.h"
+#include "nl-aux-core/nl-core.h"
 
 /**
  * @ingroup msg
@@ -349,10 +354,13 @@ int nla_memcpy(void *dest, const struct nlattr *src, int count)
 
 	if (!src)
 		return 0;
-	
-	minlen = min_t(int, count, nla_len(src));
-	memcpy(dest, nla_data(src), minlen);
 
+	minlen = _NL_MIN(count, nla_len(src));
+
+	if (minlen <= 0)
+		return 0;
+
+	memcpy(dest, nla_data(src), minlen);
 	return minlen;
 }
 
@@ -541,6 +549,9 @@ int nla_put_data(struct nl_msg *msg, int attrtype, const struct nl_data *data)
  */
 int nla_put_addr(struct nl_msg *msg, int attrtype, struct nl_addr *addr)
 {
+	if (nl_addr_get_len(addr) == 0)
+		return -NLE_INVAL;
+
 	return nla_put(msg, attrtype, nl_addr_get_len(addr),
 		       nl_addr_get_binary_addr(addr));
 }
@@ -987,6 +998,15 @@ int nla_nest_end_keep_empty(struct nl_msg *msg, struct nlattr *start)
 void nla_nest_cancel(struct nl_msg *msg, const struct nlattr *attr)
 {
 	ssize_t len;
+
+	if (!attr) {
+		/* For robustness, allow a NULL attr to do nothing. NULL is also
+		 * what nla_nest_start() when out of buffer space.
+		 *
+		 * Warning, before libnl-3.8, the function did not accept NULL!
+		 * If you care, catch NULL yourself. */
+		return;
+	}
 
 	len = (char *) nlmsg_tail(msg->nm_nlh) - (char *) attr;
 	if (len < 0)
