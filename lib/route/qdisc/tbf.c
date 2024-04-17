@@ -9,18 +9,30 @@
  * @{
  */
 
-#include <netlink-private/netlink.h>
-#include <netlink-private/tc.h>
+#include "nl-default.h"
+
 #include <netlink/netlink.h>
 #include <netlink/cache.h>
 #include <netlink/utils.h>
-#include <netlink-private/route/tc-api.h>
 #include <netlink/route/qdisc.h>
 #include <netlink/route/class.h>
 #include <netlink/route/link.h>
 #include <netlink/route/qdisc/tbf.h>
 
+#include "tc-api.h"
+
 /** @cond SKIP */
+struct rtnl_tbf {
+	uint32_t qt_limit;
+	struct rtnl_ratespec qt_rate;
+	uint32_t qt_rate_bucket;
+	uint32_t qt_rate_txtime;
+	struct rtnl_ratespec qt_peakrate;
+	uint32_t qt_peakrate_bucket;
+	uint32_t qt_peakrate_txtime;
+	uint32_t qt_mask;
+};
+
 #define TBF_ATTR_LIMIT			0x01
 #define TBF_ATTR_RATE			0x02
 #define TBF_ATTR_PEAKRATE		0x10
@@ -441,12 +453,12 @@ static struct rtnl_tc_ops tbf_tc_ops = {
 	.to_msg_fill		= tbf_msg_fill,
 };
 
-static void __init tbf_init(void)
+static void _nl_init tbf_init(void)
 {
 	rtnl_tc_register(&tbf_tc_ops);
 }
 
-static void __exit tbf_exit(void)
+static void _nl_exit tbf_exit(void)
 {
 	rtnl_tc_unregister(&tbf_tc_ops);
 }

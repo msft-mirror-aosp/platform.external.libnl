@@ -4,13 +4,12 @@
  * Copyright (c) 2018 Red Hat, Inc.
  */
 
-#include <stdlib.h>
-#include <stdbool.h>
+#include "nl-default.h"
+
 #include <linux/netlink.h>
 
-#include "netlink-private/utils.h"
-#include "netlink/route/link.h"
-#include "netlink/route/link/sit.h"
+#include <netlink/route/link.h>
+#include <netlink/route/link/sit.h>
 #include <netlink/route/link/bonding.h>
 #include <netlink/route/link/bridge.h>
 #include <netlink/route/link/ip6tnl.h>

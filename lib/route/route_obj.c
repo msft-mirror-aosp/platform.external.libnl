@@ -24,9 +24,10 @@
  * @{
  */
 
-#include <netlink-private/netlink.h>
-#include <netlink-private/utils.h>
-#include <netlink-private/route/nexthop-encap.h>
+#include "nl-default.h"
+
+#include <linux/in_route.h>
+
 #include <netlink/netlink.h>
 #include <netlink/cache.h>
 #include <netlink/utils.h>
@@ -36,9 +37,40 @@
 #include <netlink/route/route.h>
 #include <netlink/route/link.h>
 #include <netlink/route/nexthop.h>
-#include <linux/in_route.h>
+
+#include "nl-route.h"
+#include "nl-aux-route/nl-route.h"
+#include "nl-priv-dynamic-core/nl-core.h"
+#include "nexthop-encap.h"
 
 /** @cond SKIP */
+struct rtnl_route {
+	NLHDR_COMMON
+
+	uint8_t rt_family;
+	uint8_t rt_dst_len;
+	uint8_t rt_src_len;
+	uint8_t rt_tos;
+	uint8_t rt_protocol;
+	uint8_t rt_scope;
+	uint8_t rt_type;
+	uint8_t rt_nmetrics;
+	uint8_t rt_ttl_propagate;
+	uint32_t rt_flags;
+	struct nl_addr *rt_dst;
+	struct nl_addr *rt_src;
+	uint32_t rt_table;
+	uint32_t rt_iif;
+	uint32_t rt_prio;
+	uint32_t rt_metrics[RTAX_MAX];
+	uint32_t rt_metrics_mask;
+	uint32_t rt_nr_nh;
+	struct nl_addr *rt_pref_src;
+	struct nl_list_head rt_nexthops;
+	struct rtnl_rtcacheinfo rt_cacheinfo;
+	uint32_t rt_flag_mask;
+};
+
 #define ROUTE_ATTR_FAMILY    0x000001
 #define ROUTE_ATTR_TOS       0x000002
 #define ROUTE_ATTR_TABLE     0x000004
@@ -145,7 +177,8 @@ static void route_dump_line(struct nl_object *a, struct nl_dump_params *p)
 		nl_dump(p, "cache ");
 
 	if (!(r->ce_mask & ROUTE_ATTR_DST) ||
-	    nl_addr_get_len(r->rt_dst) == 0)
+	    (nl_addr_get_prefixlen(r->rt_dst) == 0 &&
+	     nl_addr_get_len(r->rt_dst) > 0 && nl_addr_iszero(r->rt_dst)))
 		nl_dump(p, "default ");
 	else
 		nl_dump(p, "%s ", nl_addr2str(r->rt_dst, buf, sizeof(buf)));
@@ -311,7 +344,7 @@ static void route_keygen(struct nl_object *obj, uint32_t *hashkey,
 		uint32_t	rt_table;
 		uint32_t	rt_prio;
 		char 		rt_addr[0];
-	} __attribute__((packed)) *rkey = NULL;
+	} _nl_packed *rkey = NULL;
 #ifdef NL_DEBUG
 	char buf[INET6_ADDRSTRLEN+5];
 #endif
@@ -368,22 +401,21 @@ static uint64_t route_compare(struct nl_object *_a, struct nl_object *_b,
 	int i, found;
 	uint64_t diff = 0;
 
-#define ROUTE_DIFF(ATTR, EXPR) ATTR_DIFF(attrs, ROUTE_ATTR_##ATTR, a, b, EXPR)
-
-	diff |= ROUTE_DIFF(FAMILY,	a->rt_family != b->rt_family);
-	diff |= ROUTE_DIFF(TOS,		a->rt_tos != b->rt_tos);
-	diff |= ROUTE_DIFF(TABLE,	a->rt_table != b->rt_table);
-	diff |= ROUTE_DIFF(PROTOCOL,	a->rt_protocol != b->rt_protocol);
-	diff |= ROUTE_DIFF(SCOPE,	a->rt_scope != b->rt_scope);
-	diff |= ROUTE_DIFF(TYPE,	a->rt_type != b->rt_type);
-	diff |= ROUTE_DIFF(PRIO,	a->rt_prio != b->rt_prio);
-	diff |= ROUTE_DIFF(DST,		nl_addr_cmp(a->rt_dst, b->rt_dst));
-	diff |= ROUTE_DIFF(SRC,		nl_addr_cmp(a->rt_src, b->rt_src));
-	diff |= ROUTE_DIFF(IIF,		a->rt_iif != b->rt_iif);
-	diff |= ROUTE_DIFF(PREF_SRC,	nl_addr_cmp(a->rt_pref_src,
-						    b->rt_pref_src));
-	diff |= ROUTE_DIFF(TTL_PROPAGATE,
-			   a->rt_ttl_propagate != b->rt_ttl_propagate);
+#define _DIFF(ATTR, EXPR) ATTR_DIFF(attrs, ATTR, a, b, EXPR)
+	diff |= _DIFF(ROUTE_ATTR_FAMILY, a->rt_family != b->rt_family);
+	diff |= _DIFF(ROUTE_ATTR_TOS, a->rt_tos != b->rt_tos);
+	diff |= _DIFF(ROUTE_ATTR_TABLE, a->rt_table != b->rt_table);
+	diff |= _DIFF(ROUTE_ATTR_PROTOCOL, a->rt_protocol != b->rt_protocol);
+	diff |= _DIFF(ROUTE_ATTR_SCOPE, a->rt_scope != b->rt_scope);
+	diff |= _DIFF(ROUTE_ATTR_TYPE, a->rt_type != b->rt_type);
+	diff |= _DIFF(ROUTE_ATTR_PRIO, a->rt_prio != b->rt_prio);
+	diff |= _DIFF(ROUTE_ATTR_DST, nl_addr_cmp(a->rt_dst, b->rt_dst));
+	diff |= _DIFF(ROUTE_ATTR_SRC, nl_addr_cmp(a->rt_src, b->rt_src));
+	diff |= _DIFF(ROUTE_ATTR_IIF, a->rt_iif != b->rt_iif);
+	diff |= _DIFF(ROUTE_ATTR_PREF_SRC,
+		      nl_addr_cmp(a->rt_pref_src, b->rt_pref_src));
+	diff |= _DIFF(ROUTE_ATTR_TTL_PROPAGATE,
+		      a->rt_ttl_propagate != b->rt_ttl_propagate);
 
 	if (flags & LOOSE_COMPARISON) {
 		nl_list_for_each_entry(nh_b, &b->rt_nexthops, rtnh_list) {
@@ -405,10 +437,10 @@ static uint64_t route_compare(struct nl_object *_a, struct nl_object *_b,
 			if (a->rt_metrics_mask & (1 << i) &&
 			    (!(b->rt_metrics_mask & (1 << i)) ||
 			     a->rt_metrics[i] != b->rt_metrics[i]))
-				diff |= ROUTE_DIFF(METRICS, 1);
+				diff |= _DIFF(ROUTE_ATTR_METRICS, 1);
 		}
 
-		diff |= ROUTE_DIFF(FLAGS,
+		diff |= _DIFF(ROUTE_ATTR_FLAGS,
 			  (a->rt_flags ^ b->rt_flags) & b->rt_flag_mask);
 	} else {
 		if (a->rt_nr_nh != b->rt_nr_nh)
@@ -446,23 +478,22 @@ static uint64_t route_compare(struct nl_object *_a, struct nl_object *_b,
 		for (i = 0; i < RTAX_MAX - 1; i++) {
 			if ((a->rt_metrics_mask & (1 << i)) ^
 			    (b->rt_metrics_mask & (1 << i)))
-				diff |= ROUTE_DIFF(METRICS, 1);
+				diff |= _DIFF(ROUTE_ATTR_METRICS, 1);
 			else
-				diff |= ROUTE_DIFF(METRICS,
+				diff |= _DIFF(ROUTE_ATTR_METRICS,
 					a->rt_metrics[i] != b->rt_metrics[i]);
 		}
 
-		diff |= ROUTE_DIFF(FLAGS, a->rt_flags != b->rt_flags);
+		diff |= _DIFF(ROUTE_ATTR_FLAGS, a->rt_flags != b->rt_flags);
 	}
 
 out:
 	return diff;
 
 nh_mismatch:
-	diff |= ROUTE_DIFF(MULTIPATH, 1);
+	diff |= _DIFF(ROUTE_ATTR_MULTIPATH, 1);
 	goto out;
-
-#undef ROUTE_DIFF
+#undef _DIFF
 }
 
 static int route_update(struct nl_object *old_obj, struct nl_object *new_obj)
@@ -1156,9 +1187,23 @@ int rtnl_route_parse(struct nlmsghdr *nlh, struct rtnl_route **result)
 		if (!(dst = nl_addr_alloc_attr(tb[RTA_DST], family)))
 			return -NLE_NOMEM;
 	} else {
-		if (!(dst = nl_addr_alloc(0)))
+		int len;
+
+		switch (family) {
+			case AF_INET:
+				len = 4;
+				break;
+
+			case AF_INET6:
+				len = 16;
+				break;
+			default:
+				len = 0;
+				break;
+		}
+
+		if (!(dst = nl_addr_build(family, NULL, len)))
 			return -NLE_NOMEM;
-		nl_addr_set_family(dst, rtm->rtm_family);
 	}
 
 	nl_addr_set_prefixlen(dst, rtm->rtm_dst_len);

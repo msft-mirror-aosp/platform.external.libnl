@@ -9,10 +9,14 @@
  * @{
  */
 
-#include <netlink-private/genl.h>
+#include "nl-default.h"
+
 #include <netlink/netlink.h>
 #include <netlink/genl/genl.h>
 #include <netlink/utils.h>
+
+#include "nl-genl.h"
+#include "nl-aux-core/nl-core.h"
 
 /**
  * @name Generic Netlink Socket

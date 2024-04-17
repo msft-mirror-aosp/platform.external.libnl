@@ -83,6 +83,7 @@ cc_library {
 
     local_include_dirs: [
         "include",
+        "lib/route",
     ],
     export_include_dirs: ["include"],
     cflags: [

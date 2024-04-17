@@ -10,13 +10,17 @@
  * @{
  */
 
-#include <netlink-private/netlink.h>
-#include <netlink-private/tc.h>
+#include "nl-default.h"
+
+#include <linux/tc_ematch/tc_em_cmp.h>
+
 #include <netlink/netlink.h>
 #include <netlink/route/classifier.h>
 #include <netlink/route/cls/ematch.h>
 #include <netlink/route/cls/ematch/cmp.h>
-#include <linux/tc_ematch/tc_em_cmp.h>
+
+#include "nl-route.h"
+#include "nl-aux-core/nl-core.h"
 
 #include "ematch_syntax.h"
 #include "ematch_grammar.h"
