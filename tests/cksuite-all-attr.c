@@ -3,15 +3,17 @@
  * Copyright (c) 2013 Thomas Graf <tgraf@suug.ch>
  */
 
+#include "nl-default.h"
+
 #include <linux/netlink.h>
 #include <linux/if_ether.h>
 
+#include <netlink/attr.h>
+#include <netlink/msg.h>
+#include <netlink/route/cls/u32.h>
+
 #include "cksuite-all.h"
-#include "netlink/attr.h"
-#include "netlink/msg.h"
-#include "netlink/route/cls/u32.h"
-#include "netlink-private/route/tc-api.h"
-#include "netlink-private/nl-auto.h"
+#include "nl-aux-route/nl-route.h"
 
 START_TEST(attr_size)
 {
@@ -65,7 +67,7 @@ START_TEST(msg_construct)
 
 	nlh = nlmsg_hdr(msg);
 	i = 1;
-	nlmsg_for_each_attr (a, nlh, 0, rem) {
+	nlmsg_for_each_attr(a, nlh, 0, rem) {
 		ck_assert_msg(nla_type(a) == i, "Expected attribute %d", i);
 		i++;
 		ck_assert_msg(nla_get_u32(a) == i,
