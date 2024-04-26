@@ -1,22 +1,20 @@
 /* SPDX-License-Identifier: LGPL-2.1-only */
 
+#include "nl-default.h"
+
 #include "nl-test-util.h"
 
 #include <fcntl.h>
-#include <inttypes.h>
-#include <limits.h>
 #include <sched.h>
-#include <stdbool.h>
 #include <stdio.h>
-#include <stdlib.h>
 #include <sys/mount.h>
-#include <unistd.h>
 
-#include "netlink-private/utils.h"
-#include "netlink/netlink.h"
-#include "netlink/route/link.h"
-#include "netlink/route/route.h"
-#include "netlink/socket.h"
+#include <netlink/netlink.h>
+#include <netlink/route/link.h>
+#include <netlink/route/route.h>
+#include <netlink/socket.h>
+
+#include "nl-aux-route/nl-route.h"
 
 /*****************************************************************************/
 
@@ -87,12 +85,12 @@ struct nltst_netns {
 
 /*****************************************************************************/
 
-#define _assert_nltst_netns(nsdata)                                            \
-	do {                                                                   \
-		const struct nltst_netns *_nsdata = (nsdata);                  \
-                                                                               \
-		ck_assert_ptr_nonnull(_nsdata);                                \
-		ck_assert_int_eq(_nsdata->canary, _CANARY);                    \
+#define _assert_nltst_netns(nsdata)                           \
+	do {                                                  \
+		const struct nltst_netns *_nsdata = (nsdata); \
+                                                              \
+		ck_assert_ptr_nonnull(_nsdata);               \
+		ck_assert_int_eq(_nsdata->canary, _CANARY);   \
 	} while (0)
 
 static struct {
