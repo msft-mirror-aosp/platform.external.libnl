@@ -1,12 +1,14 @@
 /* SPDX-License-Identifier: LGPL-2.1-only */
 
+#include "nl-default.h"
+
 #include <check.h>
 
-#include "linux/snmp.h"
-#include "netlink-private/utils.h"
-#include "netlink-private/route/utils.h"
+#include <linux/snmp.h>
 
-#include "netlink/route/link.h"
+#include <netlink/route/link.h>
+
+#include "nl-priv-static-route/nl-priv-static-route.h"
 
 START_TEST(static_checks)
 {
@@ -39,6 +41,15 @@ START_TEST(static_checks)
 			ck_assert_int_le(i, RTNL_LINK_STATS_MAX);
 		ck_assert_int_eq(i, rtnl_link_str2stat(s));
 	}
+
+	ck_assert_int_eq(nl_str2ip_proto(""), -NLE_OBJ_NOTFOUND);
+	ck_assert_int_eq(nl_str2ip_proto("5"), 5);
+	ck_assert_int_eq(nl_str2ip_proto("  13 "), -NLE_OBJ_NOTFOUND);
+	ck_assert_int_eq(nl_str2ip_proto("13"), 13);
+	ck_assert_int_eq(nl_str2ip_proto("0x13"), 0x13);
+	ck_assert_int_eq(nl_str2ip_proto("0342"), 0342);
+	ck_assert_int_eq(nl_str2ip_proto("2147483647"), 2147483647);
+	ck_assert_int_eq(nl_str2ip_proto("2147483648"), -NLE_OBJ_NOTFOUND);
 }
 END_TEST
 
