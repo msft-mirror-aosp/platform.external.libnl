@@ -83,6 +83,7 @@ cc_library {
 
     local_include_dirs: [
         "include",
+        "lib/route",
     ],
     export_include_dirs: ["include"],
     cflags: [
@@ -101,6 +102,7 @@ cc_library {
 
     sanitize: {
         integer_overflow: true,
+        blocklist: "libnl_blocklist.txt",
     },
     apex_available: [
         "//apex_available:platform",

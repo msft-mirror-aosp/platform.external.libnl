@@ -17,17 +17,22 @@
  * @{
  */
 
-#include <netlink-private/netlink.h>
+#include "nl-default.h"
+
+#include <linux/if_link.h>
+
+#include <linux/ethtool.h>
+
 #include <netlink/netlink.h>
 #include <netlink/attr.h>
 #include <netlink/utils.h>
 #include <netlink/object.h>
 #include <netlink/route/rtnl.h>
-#include <netlink-private/route/link/api.h>
 #include <netlink/route/link/macvlan.h>
 #include <netlink/route/link/macvtap.h>
 
-#include <linux/if_link.h>
+#include "nl-route.h"
+#include "link-api.h"
 
 /** @cond SKIP */
 #define MACVLAN_HAS_MODE        (1<<0)
@@ -855,13 +860,13 @@ int rtnl_link_macvtap_str2mode(const char *name)
 
 /** @} */
 
-static void __init macvlan_init(void)
+static void _nl_init macvlan_init(void)
 {
 	rtnl_link_register_info(&macvlan_info_ops);
 	rtnl_link_register_info(&macvtap_info_ops);
 }
 
-static void __exit macvlan_exit(void)
+static void _nl_exit macvlan_exit(void)
 {
 	rtnl_link_unregister_info(&macvlan_info_ops);
 	rtnl_link_unregister_info(&macvtap_info_ops);
