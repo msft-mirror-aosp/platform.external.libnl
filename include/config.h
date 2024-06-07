@@ -56,7 +56,7 @@
 #undef LT_OBJDIR
 
 /* Define to 1 to enable debugging */
-#undef NL_DEBUG
+#define NL_DEBUG 0
 
 /* Define to 1 if your C compiler doesn't accept -c and -o together. */
 #undef NO_MINUS_C_MINUS_O

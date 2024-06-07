@@ -9,6 +9,7 @@ check_LTLIBRARIES =
 check_PROGRAMS =
 check_programs =
 check_local =
+check_build =
 
 bin_PROGRAMS =
 sbin_PROGRAMS =
@@ -34,11 +35,18 @@ pkgconfig_DATA = \
 warn_cppflags = \
 	-Wall \
 	-Wextra \
+	\
+	-Wdeclaration-after-statement \
 	-Wmissing-prototypes \
-	-Wno-unused-parameter \
-	-Wno-sign-compare \
-	-Wno-missing-field-initializers \
 	-Wpointer-arith \
+	-Wvla \
+	\
+	-Wno-unused-parameter \
+	$(NULL)
+
+defines_cppflags = \
+	-D_NL_SYSCONFDIR_LIBNL=\"$(sysconfdir)/libnl\" \
+	-D_NL_PKGLIBDIR=\"$(pkglibdir)\" \
 	$(NULL)
 
 ###############################################################################
@@ -387,8 +395,7 @@ default_includes = \
 
 lib_cppflags = \
 	$(warn_cppflags) \
-	-D_GNU_SOURCE \
-	-DSYSCONFDIR=\"$(sysconfdir)/libnl\" \
+	$(defines_cppflags) \
 	$(default_includes) \
 	$(NULL)
 
@@ -705,9 +712,7 @@ EXTRA_src_lib_libnl_cli_3_la_DEPENDENCIES = \
 	libnl-cli-3.sym
 src_lib_libnl_cli_3_la_CPPFLAGS = \
 	$(warn_cppflags) \
-	-D_GNU_SOURCE \
-	-DPKGLIBDIR=\"$(pkglibdir)\" \
-	-DSYSCONFDIR=\"$(sysconfdir)\" \
+	$(defines_cppflags) \
 	$(default_includes) \
 	$(NULL)
 src_lib_libnl_cli_3_la_LDFLAGS = \
@@ -725,8 +730,7 @@ src_lib_libnl_cli_3_la_LIBADD = \
 
 src_cppflags = \
 	$(warn_cppflags) \
-	-D_GNU_SOURCE \
-	-DSYSCONFDIR=\"$(sysconfdir)/libnl\" \
+	$(defines_cppflags) \
 	$(default_includes) \
 	$(NULL)
 
@@ -905,8 +909,7 @@ src_nl_util_addr_LDADD =            $(src_ldadd)
 
 tests_cppflags = \
 	$(warn_cppflags) \
-	-D_GNU_SOURCE \
-	-DSYSCONFDIR=\"$(sysconfdir)/libnl\" \
+	$(defines_cppflags) \
 	$(default_includes) \
 	$(NULL)
 
@@ -1136,24 +1139,43 @@ EXTRA_DIST += \
 
 %.build-headers-test.c: %
 	mkdir -p "$(dir $@)"
-	printf "#include <$$(echo "$<" | sed 's|.*\<include/netlink/|netlink/|')>\nint main(int argc, char **argv) { return 0; }" > $@
+	printf "#include <$$(echo "$<" | sed 's|.*\<include/netlink/|netlink/|')>\nint main(void) { return 0; }" > $@
 
 %.build-headers-test.o: %.build-headers-test.c
-	$(COMPILE) -Wall -Werror -Wno-error=cpp -I$(srcdir)/include -I$(builddir)/include -c -o $@ $<
+	$(CC) -Wall -Werror -D_NL_NO_WARN_DEPRECATED_HEADER -I$(srcdir)/include -I$(builddir)/include -c -o $@ $<
 
 BUILD_HEADERS_OBJS = $(patsubst %,%.build-headers-test.o,$(public_headers))
 
 # Test whether the public headers are all self-contained and can be build.
 # This test is not hooked up as `make check`.
-check-local-build-headers: $(BUILD_HEADERS_OBJS)
+check-build-headers: $(BUILD_HEADERS_OBJS)
 
 CLEANFILES += $(BUILD_HEADERS_OBJS)
 
-check_local += check-local-build-headers
+check_build += check-build-headers
 
 ###############################################################################
 
-check-local: $(check_local)
+if HAS_CXX
+%.build-headers-test-cxx.cpp: %
+	mkdir -p "$(dir $@)"
+	printf "#include <cstdio>\n#include <$$(echo "$<" | sed 's|.*\<include/netlink/|netlink/|')>\nint main(void) { return 0; }" > $@
+
+%.build-headers-test-cxx.o: %.build-headers-test-cxx.cpp %.build-headers-test.o
+	$(CXX) -Wall -Werror -D_NL_NO_WARN_DEPRECATED_HEADER -I$(srcdir)/include -I$(builddir)/include -c -o $@ $<
+
+BUILD_HEADERS_OBJS_CXX = $(patsubst %,%.build-headers-test-cxx.o,$(public_headers))
+
+CLEANFILES += $(BUILD_HEADERS_OBJS_CXX)
+
+check-build-headers-cxx: $(BUILD_HEADERS_OBJS_CXX)
+
+check_build += check-build-headers-cxx
+endif
+
+###############################################################################
+
+check-local: $(check_build) $(check_local)
 
 .PHONY: $(check_local)
 
@@ -1182,8 +1204,10 @@ EXTRA_DIST += \
 
 ###############################################################################
 
-check-progs: all $(check_PROGRAMS) $(check_LTLIBRARIES)
+check-build: all $(check_PROGRAMS) $(check_LTLIBRARIES) $(check_build)
 
-.PHONY: check-progs
+check-progs: check-build
+
+.PHONY: check-progs check-build
 
 ###############################################################################
