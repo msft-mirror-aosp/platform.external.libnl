@@ -52,7 +52,6 @@
 int nl_debug = 0;
 
 /** @cond SKIP */
-#ifdef NL_DEBUG
 struct nl_dump_params nl_debug_dp = {
 	.dp_type = NL_DUMP_DETAILS,
 };
@@ -61,7 +60,7 @@ static void _nl_init nl_debug_init(void)
 {
 	char *nldbg, *end;
 
-	if ((nldbg = getenv("NLDBG"))) {
+	if (NL_DEBUG && (nldbg = getenv("NLDBG"))) {
 		long level = strtol(nldbg, &end, 0);
 		if (nldbg != end)
 			nl_debug = level;
@@ -69,7 +68,6 @@ static void _nl_init nl_debug_init(void)
 
 	nl_debug_dp.dp_fd = stderr;
 }
-#endif
 
 int __nl_read_num_str_file(const char *path, int (*cb)(long, const char *))
 {
@@ -1071,14 +1069,15 @@ char *__type2str(int type, char *buf, size_t len,
 		 const struct trans_tbl *tbl, size_t tbl_len)
 {
 	size_t i;
+
 	for (i = 0; i < tbl_len; i++) {
-		if (tbl[i].i == type) {
+		if (tbl[i].i == ((uint64_t)type)) {
 			snprintf(buf, len, "%s", tbl[i].a);
 			return buf;
 		}
 	}
 
-	snprintf(buf, len, "0x%x", type);
+	snprintf(buf, len, "0x%x", (unsigned)type);
 	return buf;
 }
 
@@ -1171,7 +1170,7 @@ int __str2flags(const char *buf, const struct trans_tbl *tbl, size_t tbl_len)
 			p++;
 
 		t = strchr(p, ',');
-		len = t ? t - p : strlen(p);
+		len = t ? ((size_t)(t - p)) : strlen(p);
 		for (i = 0; i < tbl_len; i++)
 			if (len == strlen(tbl[i].a) &&
 			    !strncasecmp(tbl[i].a, p, len))
@@ -1285,9 +1284,9 @@ int nl_has_capability (int capability)
 			NL_CAPABILITY_VERSION_3_7_0,
 			NL_CAPABILITY_VERSION_3_8_0,
 			NL_CAPABILITY_VERSION_3_9_0,
-			0,
-			0,
-			0,
+			0, /* NL_CAPABILITY_VERSION_3_10_0 */
+			0, /* NL_CAPABILITY_VERSION_3_11_0 */
+			0, /* NL_CAPABILITY_VERSION_3_12_0 */
 			0,
 			0),
 		/* IMPORTANT: these capability numbers are intended to be universal and stable
