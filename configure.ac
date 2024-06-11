@@ -61,8 +61,11 @@ AC_SUBST(LT_REVISION)
 LT_AGE=libnl_lt_age
 AC_SUBST(LT_AGE)
 
+AC_USE_SYSTEM_EXTENSIONS
+
 AC_PROG_CC
 AM_PROG_CC_C_O
+AC_PROG_CXX
 AC_PROG_INSTALL
 LT_INIT
 AC_PROG_MKDIR_P
@@ -71,6 +74,15 @@ AC_CHECK_PROGS(YACC, 'bison -y')
 
 AC_C_CONST
 AC_C_INLINE
+
+AC_LANG_PUSH([C++])
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
+  [[#ifndef __cplusplus
+    #error "broken C++"
+    #endif]])],,
+  [CXX=;])
+AC_LANG_POP([C++])
+AM_CONDITIONAL([HAS_CXX], [test "x$CXX" != x])
 
 PKG_CHECK_MODULES([CHECK], [check >= 0.9.0],
 	[has_check="yes"],
@@ -110,10 +122,13 @@ fi
 AM_CONDITIONAL([ENABLE_STATIC], [test "$enable_static" != "no"])
 
 AC_ARG_ENABLE([debug],
-	AS_HELP_STRING([--disable-debug], [Do not include debugging statements]),
-	[enable_debug="$enableval"], [enable_debug="yes"])
-if test "x$enable_debug" = "xyes"; then
+        AS_HELP_STRING([--disable-debug], [Do not include debugging statements]),
+        [enable_debug="$enableval"], [enable_debug="yes"])
+if test "$enable_debug" = "yes"; then
     AC_DEFINE([NL_DEBUG], [1], [Define to 1 to enable debugging])
+else
+    enable_debug=no
+    AC_DEFINE([NL_DEBUG], [0], [Define to 1 to enable debugging])
 fi
 
 AC_CONFIG_SUBDIRS([doc])
@@ -152,6 +167,11 @@ fi
 
 AC_OUTPUT
 
+CXX_MSG="none"
+if test "x$CXX" != x ; then
+	CXX_MSG="[$CXX]"
+fi
+
 echo
 echo "libnl $LIBNL_VERSION configuration${LIBNL_GIT_SHA:+ (git:$LIBNL_GIT_SHA)}:"
 echo "    --enable-pthreads=$enable_pthreads"
@@ -161,4 +181,5 @@ echo "    --enable-debug=$enable_debug"
 echo "    --enable-cli=$enable_cli"
 echo
 echo "    check: $has_check"
+echo "    CXX: $CXX_MSG (only used for tests)"
 echo
