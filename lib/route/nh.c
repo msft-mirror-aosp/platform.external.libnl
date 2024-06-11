@@ -176,7 +176,7 @@ static void nexthop_keygen(struct nl_object *obj, uint32_t *hashkey,
 	unsigned int lkey_sz;
 	struct nexthop_hash_key {
 		uint32_t nh_id;
-	} __attribute__((packed)) lkey;
+	} _nl_packed lkey;
 
 	lkey_sz = sizeof(lkey);
 	lkey.nh_id = nexthop->nh_id;
@@ -336,7 +336,7 @@ static int nexthop_msg_parser(struct nl_cache_ops *ops, struct sockaddr_nl *who,
 		unsigned len;
 
 		data = nla_data(tb[NHA_GROUP]);
-		len = nla_len(tb[NHA_GROUP]);
+		len = _nla_len(tb[NHA_GROUP]);
 		size = len / sizeof(struct nexthop_grp);
 
 		err = rtnl_nh_grp_info(size, (const struct nexthop_grp *)data,
@@ -454,7 +454,7 @@ struct rtnl_nh *rtnl_nh_get(struct nl_cache *cache, int nhid)
 		return NULL;
 
 	nl_list_for_each_entry(nh, &cache->c_items, ce_list) {
-		if (nh->nh_id == nhid) {
+		if (nh->nh_id == ((unsigned)nhid)) {
 			nl_object_get((struct nl_object *)nh);
 			return nh;
 		}
