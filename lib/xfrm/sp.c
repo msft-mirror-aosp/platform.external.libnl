@@ -41,6 +41,7 @@
 
 #include "nl-default.h"
 
+#include <time.h>
 #include <netlink/netlink.h>
 #include <netlink/cache.h>
 #include <netlink/object.h>
@@ -1280,7 +1281,7 @@ int xfrmnl_sp_get_sec_ctx (struct xfrmnl_sp* sp, unsigned int* len, unsigned int
  *
  * @return     0 if sucessfull, else -1
  */
-int xfrmnl_sp_set_sec_ctx (struct xfrmnl_sp* sp, unsigned int len __attribute__((unused)), unsigned int exttype, unsigned int alg, unsigned int doi, unsigned int ctx_len, char* ctx_str)
+int xfrmnl_sp_set_sec_ctx (struct xfrmnl_sp* sp, unsigned int len, unsigned int exttype, unsigned int alg, unsigned int doi, unsigned int ctx_len, char* ctx_str)
 {
 	/* Free up the old context string and allocate new one */
 	if (sp->sec_ctx)
@@ -1367,12 +1368,15 @@ void xfrmnl_sp_foreach_usertemplate(struct xfrmnl_sp *r,
 struct xfrmnl_user_tmpl *xfrmnl_sp_usertemplate_n(struct xfrmnl_sp *r, int n)
 {
 	struct xfrmnl_user_tmpl *utmpl;
-	uint32_t i;
 
-	if (r->ce_mask & XFRM_SP_ATTR_TMPL && r->nr_user_tmpl > n) {
+	if (r->ce_mask & XFRM_SP_ATTR_TMPL && n >= 0 &&
+	    ((unsigned)n) < r->nr_user_tmpl) {
+		uint32_t i;
+
 		i = 0;
 		nl_list_for_each_entry(utmpl, &r->usertmpl_list, utmpl_list) {
-			if (i == n) return utmpl;
+			if (i == ((unsigned)n))
+				return utmpl;
 			i++;
 		}
 	}
@@ -1449,12 +1453,12 @@ static struct nl_cache_ops xfrmnl_sp_ops = {
  * @{
  */
 
-static void __attribute__ ((constructor)) xfrm_sp_init(void)
+static void _nl_init xfrm_sp_init(void)
 {
 	nl_cache_mngt_register(&xfrmnl_sp_ops);
 }
 
-static void __attribute__ ((destructor)) xfrm_sp_exit(void)
+static void _nl_exit xfrm_sp_exit(void)
 {
 	nl_cache_mngt_unregister(&xfrmnl_sp_ops);
 }
