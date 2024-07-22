@@ -8,13 +8,13 @@ third_party {
   license_type: RESTRICTED
   last_upgrade_date {
     year: 2024
-    month: 6
-    day: 4
+    month: 7
+    day: 19
   }
   homepage: "https://github.com/thom311/libnl"
   identifier {
     type: "Git"
     value: "https://github.com/thom311/libnl.git"
-    version: "5248e1a45576617b349465997822cef34cbc5053"
+    version: "libnl3_10_0"
   }
 }
