@@ -1,3 +1,4 @@
+*~
 .deps
 .libs
 .dirstamp
@@ -5,7 +6,6 @@
 *.lo
 *.o
 *.swp
-*.patch
 Makefile
 Makefile.in
 defs.h.in
@@ -23,12 +23,15 @@ test-suite.log
 /doc/Doxyfile
 /doc/aclocal.m4
 /doc/api/*.css
+/doc/api/*.dot
 /doc/api/*.html
 /doc/api/*.js
 /doc/api/*.map
 /doc/api/*.md5
 /doc/api/*.png
 /doc/api/*.tag
+/doc/api/_formula*
+/doc/api/doxygen.svg
 /doc/api/formula.repository
 /doc/api/jquery.js
 /doc/asciidoc.tmp
@@ -40,7 +43,10 @@ test-suite.log
 /doc/images/asciidoc__*.png
 /doc/images/core__*
 /doc/libnl.dict
+/include/config.h
+/include/config.h.in
 /include/netlink/version.h
+/include/stamp-h1
 /lib/defs.h
 /lib/lex.yy.c
 /lib/libnl-*.so*
@@ -56,9 +62,8 @@ test-suite.log
 /libtool
 /m4/libtool.m4
 /m4/lt*.m4
-/python/build
-/python/capi.py
-/python/capi_wrap.c
+/python/**/capi*
+/python/build/
 /python/setup.py
 /src/genl-ctrl-list
 /src/idiag-socket-details
@@ -96,6 +101,7 @@ test-suite.log
 /src/nl-neigh-delete
 /src/nl-neigh-list
 /src/nl-neightbl-list
+/src/nl-nh-list
 /src/nl-pktloc-lookup
 /src/nl-qdisc-add
 /src/nl-qdisc-delete
