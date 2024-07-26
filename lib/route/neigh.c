@@ -242,9 +242,7 @@ static void neigh_keygen(struct nl_object *obj, uint32_t *hashkey,
 		uint16_t	n_vlan;
 		char		n_addr[0];
 	} _nl_packed *nkey;
-#ifdef NL_DEBUG
 	char buf[INET6_ADDRSTRLEN+5];
-#endif
 
 	if (neigh->n_family == AF_BRIDGE) {
 		if (neigh->n_lladdr)
@@ -678,8 +676,8 @@ struct rtnl_neigh * rtnl_neigh_get(struct nl_cache *cache, int ifindex,
 	struct rtnl_neigh *neigh;
 
 	nl_list_for_each_entry(neigh, &cache->c_items, ce_list) {
-		if (neigh->n_ifindex == ifindex &&
-		    neigh->n_family == dst->a_family &&
+		if (neigh->n_ifindex == ((unsigned)ifindex) &&
+		    neigh->n_family == ((unsigned)dst->a_family) &&
 		    !nl_addr_cmp(neigh->n_dst, dst)) {
 			nl_object_get((struct nl_object *) neigh);
 			return neigh;
@@ -704,9 +702,9 @@ struct rtnl_neigh * rtnl_neigh_get_by_vlan(struct nl_cache *cache, int ifindex,
 	struct rtnl_neigh *neigh;
 
 	nl_list_for_each_entry(neigh, &cache->c_items, ce_list) {
-		if (neigh->n_ifindex == ifindex &&
-		    neigh->n_vlan == vlan &&
-		    neigh->n_lladdr && !nl_addr_cmp(neigh->n_lladdr, lladdr)) {
+		if ((neigh->n_ifindex == (unsigned)ifindex) &&
+		    neigh->n_vlan == vlan && neigh->n_lladdr &&
+		    !nl_addr_cmp(neigh->n_lladdr, lladdr)) {
 			nl_object_get((struct nl_object *) neigh);
 			return neigh;
 		}
@@ -1014,7 +1012,7 @@ static inline int __assign_addr(struct rtnl_neigh *neigh, struct nl_addr **pos,
 {
 	if (!nocheck) {
 		if (neigh->ce_mask & NEIGH_ATTR_FAMILY) {
-			if (new->a_family != neigh->n_family)
+			if (neigh->n_family != ((unsigned)new->a_family))
 				return -NLE_AF_MISMATCH;
 		} else {
 			neigh->n_family = new->a_family;

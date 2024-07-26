@@ -24,6 +24,7 @@
 #include "nl-default.h"
 
 #include <fcntl.h>
+#include <limits.h>
 #include <sys/socket.h>
 
 #include <netlink/netlink.h>
@@ -84,7 +85,7 @@ static NL_RW_LOCK(port_map_lock);
 static uint32_t generate_local_port(void)
 {
 	int i, j, m;
-	uint16_t n;
+	uint32_t n;
 	static uint16_t idx_state = 0;
 	uint32_t pid = getpid() & 0x3FFFFF;
 
@@ -316,6 +317,10 @@ void nl_socket_disable_seq_check(struct nl_sock *sk)
  */
 unsigned int nl_socket_use_seq(struct nl_sock *sk)
 {
+	if (sk->s_seq_next == UINT_MAX) {
+		sk->s_seq_next = 0;
+		return UINT_MAX;
+	}
 	return sk->s_seq_next++;
 }
 
