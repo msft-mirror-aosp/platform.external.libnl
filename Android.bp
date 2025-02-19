@@ -45,7 +45,7 @@ cc_library {
         darwin: {
             enabled: false,
         },
-        linux_glibc: {
+        host_linux: {
             local_include_dirs: [
                 "include/linux-private",
             ],
