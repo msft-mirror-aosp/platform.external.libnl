@@ -99,6 +99,7 @@ cc_library {
         "-D_GNU_SOURCE",
         "-D_NL_SYSCONFDIR_LIBNL=\"\\\"/etc/libnl\\\"\"",
     ],
+    c_std: "gnu11",
 
     sanitize: {
         integer_overflow: true,
