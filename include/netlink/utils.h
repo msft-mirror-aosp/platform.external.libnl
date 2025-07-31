@@ -355,6 +355,19 @@ enum {
 	NL_CAPABILITY_VERSION_3_13_0 = 39,
 #define NL_CAPABILITY_VERSION_3_13_0 NL_CAPABILITY_VERSION_3_13_0
 
+	/**
+	 * The library version is libnl3 3.14.0 or newer. This capability should never be backported.
+	 */
+	NL_CAPABILITY_VERSION_3_14_0 = 40,
+#define NL_CAPABILITY_VERSION_3_14_0 NL_CAPABILITY_VERSION_3_14_0
+
+	/**
+	 * Fixes parsing bonding properties miimon, hashing_type, and
+	 * min_links from netlink.
+	 */
+	NL_CAPABILITY_ROUTE_FIX_PARSE_BONDING = 41,
+#define NL_CAPABILITY_ROUTE_FIX_PARSE_BONDING NL_CAPABILITY_ROUTE_FIX_PARSE_BONDING
+
 	__NL_CAPABILITY_MAX,
 	NL_CAPABILITY_MAX = (__NL_CAPABILITY_MAX - 1),
 #define NL_CAPABILITY_MAX NL_CAPABILITY_MAX

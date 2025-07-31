@@ -193,7 +193,7 @@
 
 /* This is also defined in stddef.h */
 #ifndef offsetof
-#define offsetof(TYPE, MEMBER) ((size_t) & ((TYPE *)0)->MEMBER)
+#define offsetof(TYPE, MEMBER) ((size_t)&((TYPE *)0)->MEMBER)
 #endif
 
 /*****************************************************************************/
@@ -710,6 +710,28 @@ static inline char *_nl_inet_ntop_dup(int addr_family, const void *addr)
 
 /*****************************************************************************/
 
+static inline size_t _nl_ptrarray_len_(const void *const *ptr, ssize_t len)
+{
+	size_t l = 0;
+
+	if (len >= 0)
+		return len;
+	if (ptr) {
+		while (ptr[l])
+			l++;
+	}
+	return l;
+}
+
+#define _nl_ptrarray_len(ptr, len)                                   \
+	({                                                           \
+		typeof(*(ptr)) *const _ptr = (ptr);                  \
+                                                                     \
+		_nl_ptrarray_len_((const void *const *)_ptr, (len)); \
+	})
+
+/*****************************************************************************/
+
 #define _NL_AUTO_DEFINE_FCN_VOID0(CastType, name, func) \
 	static inline void name(void *v)                \
 	{                                               \
@@ -744,6 +766,19 @@ static inline char *_nl_inet_ntop_dup(int addr_family, const void *addr)
 
 #define _nl_auto_free _nl_auto(_nl_auto_free_fcn)
 _NL_AUTO_DEFINE_FCN_VOID0(void *, _nl_auto_free_fcn, free);
+
+/*****************************************************************************/
+
+#define _nl_swap(p_a, p_b)                          \
+	do {                                        \
+		typeof(*(p_a)) *const _p_a = (p_a); \
+		typeof(*(p_a)) *const _p_b = (p_b); \
+		typeof(*(p_a)) _tmp;                \
+                                                    \
+		_tmp = *_p_a;                       \
+		*_p_a = *_p_b;                      \
+		*_p_b = _tmp;                       \
+	} while (0)
 
 /*****************************************************************************/
 

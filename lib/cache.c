@@ -714,17 +714,14 @@ static int __cache_pickup(struct nl_sock *sk, struct nl_cache *cache,
 static int pickup_checkdup_cb(struct nl_object *c, struct nl_parser_param *p)
 {
 	struct nl_cache *cache = (struct nl_cache *)p->pp_arg;
-	struct nl_object *old;
+	_nl_auto_nl_object struct nl_object *old = NULL;
 
 	old = nl_cache_search(cache, c);
 	if (old) {
-		if (nl_object_update(old, c) == 0) {
-			nl_object_put(old);
+		if (nl_object_update(old, c) == 0)
 			return 0;
-		}
 
 		nl_cache_remove(old);
-		nl_object_put(old);
 	}
 
 	return nl_cache_add(cache, c);
@@ -788,8 +785,8 @@ static int cache_include(struct nl_cache *cache, struct nl_object *obj,
 			 struct nl_msgtype *type, change_func_t cb,
 			 change_func_v2_t cb_v2, void *data)
 {
-	struct nl_object *old;
-	struct nl_object *clone = NULL;
+	_nl_auto_nl_object struct nl_object *old = NULL;
+	_nl_auto_nl_object struct nl_object *clone = NULL;
 	uint64_t diff = 0;
 
 	switch (type->mt_act) {
@@ -810,14 +807,10 @@ static int cache_include(struct nl_cache *cache, struct nl_object *obj,
 				if (cb_v2) {
 					cb_v2(cache, clone, old, diff,
 					      NL_ACT_CHANGE, data);
-					nl_object_put(clone);
 				} else if (cb)
 					cb(cache, old, NL_ACT_CHANGE, data);
-				nl_object_put(old);
 				return 0;
 			}
-			nl_object_put(clone);
-
 			nl_cache_remove(old);
 			if (type->mt_act == NL_ACT_DEL) {
 				if (cb_v2)
@@ -825,7 +818,6 @@ static int cache_include(struct nl_cache *cache, struct nl_object *obj,
 					      data);
 				else if (cb)
 					cb(cache, old, NL_ACT_DEL, data);
-				nl_object_put(old);
 			}
 		}
 
@@ -847,7 +839,6 @@ static int cache_include(struct nl_cache *cache, struct nl_object *obj,
 				} else if (diff && cb)
 					cb(cache, obj, NL_ACT_CHANGE, data);
 
-				nl_object_put(old);
 			}
 		}
 		break;
@@ -911,14 +902,16 @@ static int resync_cb(struct nl_object *c, struct nl_parser_param *p)
 					ca->ca_change_data);
 }
 
-int nl_cache_resync(struct nl_sock *sk, struct nl_cache *cache,
-		    change_func_t change_cb, void *data)
+static int cache_resync(struct nl_sock *sk, struct nl_cache *cache,
+			change_func_t change_cb, change_func_v2_t change_cb_v2,
+			void *data)
 {
 	struct nl_object *obj, *next;
 	struct nl_af_group *grp;
 	struct nl_cache_assoc ca = {
 		.ca_cache = cache,
 		.ca_change = change_cb,
+		.ca_change_v2 = change_cb_v2,
 		.ca_change_data = data,
 	};
 	struct nl_parser_param p = {
@@ -963,6 +956,9 @@ restart:
 			nl_cache_remove(obj);
 			if (change_cb)
 				change_cb(cache, obj, NL_ACT_DEL, data);
+			else if (change_cb_v2)
+				change_cb_v2(cache, obj, NULL, 0, NL_ACT_DEL,
+					     data);
 			nl_object_put(obj);
 		}
 	}
@@ -972,6 +968,18 @@ restart:
 	err = 0;
 errout:
 	return err;
+}
+
+int nl_cache_resync(struct nl_sock *sk, struct nl_cache *cache,
+		    change_func_t change_cb, void *data)
+{
+	return cache_resync(sk, cache, change_cb, NULL, data);
+}
+
+int nl_cache_resync_v2(struct nl_sock *sk, struct nl_cache *cache,
+		    change_func_v2_t change_cb_v2, void *data)
+{
+	return cache_resync(sk, cache, NULL, change_cb_v2, data);
 }
 
 /** @} */
