@@ -6,6 +6,7 @@ lib_LTLIBRARIES =
 noinst_LTLIBRARIES =
 check_LTLIBRARIES =
 
+clean_local =
 check_PROGRAMS =
 check_programs =
 check_local =
@@ -30,6 +31,10 @@ pkgconfig_DATA = \
 	libnl-nf-3.0.pc \
 	libnl-route-3.0.pc \
 	libnl-xfrm-3.0.pc \
+	$(NULL)
+
+extra_cppflags = \
+	-std=gnu11 \
 	$(NULL)
 
 warn_cppflags = \
@@ -334,6 +339,31 @@ noinst_HEADERS = \
 	include/nl-priv-dynamic-core/object-api.h \
 	include/nl-priv-dynamic-route/nl-priv-dynamic-route.h \
 	include/nl-priv-static-route/nl-priv-static-route.h \
+	\
+	third_party/c-list/src/c-list.h \
+	\
+	$(NULL)
+
+###############################################################################
+
+default_includes = \
+	-I$(srcdir)/include/linux-private \
+	-I$(srcdir)/include \
+	-I$(builddir)/include \
+	-I$(srcdir)/third_party/c-list/src \
+	$(NULL)
+
+default_cppflags = \
+	$(extra_cppflags) \
+	$(warn_cppflags) \
+	$(defines_cppflags) \
+	$(default_includes) \
+	$(NULL)
+
+###############################################################################
+
+lib_cppflags = \
+	$(default_cppflags) \
 	$(NULL)
 
 ###############################################################################
@@ -374,6 +404,18 @@ grammar_files_sources = \
 
 grammar_files_headers = $(grammar_files_sources:%.c=%.h)
 
+noinst_LTLIBRARIES += lib/route/libnl-grammar.la
+
+nodist_lib_route_libnl_grammar_la_SOURCES = \
+	$(grammar_files_sources)
+lib_route_libnl_grammar_la_CPPFLAGS = \
+	$(lib_cppflags) \
+	-I$(srcdir)/lib/route \
+	-Wno-unused-but-set-variable \
+	$(NULL)
+
+$(lib_route_libnl_grammar_la_OBJECTS): $(grammar_files_headers)
+
 CLEANFILES += \
 	$(grammar_files_sources) \
 	$(grammar_files_headers)
@@ -386,18 +428,6 @@ EXTRA_DIST += \
 	$(NULL)
 
 ###############################################################################
-
-default_includes = \
-	-I$(srcdir)/include/linux-private \
-	-I$(srcdir)/include \
-	-I$(builddir)/include \
-	$(NULL)
-
-lib_cppflags = \
-	$(warn_cppflags) \
-	$(defines_cppflags) \
-	$(default_includes) \
-	$(NULL)
 
 lib_LTLIBRARIES += lib/libnl-3.la
 
@@ -524,8 +554,6 @@ lib_libnl_route_3_la_SOURCES = \
 	lib/route/tc-api.h \
 	lib/route/tc.c \
 	$(NULL)
-nodist_lib_libnl_route_3_la_SOURCES = \
-	$(grammar_files_sources)
 EXTRA_lib_libnl_route_3_la_DEPENDENCIES = \
 	libnl-route-3.sym
 lib_libnl_route_3_la_CPPFLAGS = \
@@ -538,7 +566,9 @@ lib_libnl_route_3_la_LDFLAGS = \
 	-version-info $(LT_CURRENT):$(LT_REVISION):$(LT_AGE) \
 	-Wl,--version-script=$(srcdir)/libnl-route-3.sym
 lib_libnl_route_3_la_LIBADD = \
-	lib/libnl-3.la
+	lib/libnl-3.la \
+	lib/route/libnl-grammar.la \
+	$(NULL)
 
 $(lib_libnl_route_3_la_OBJECTS): $(grammar_files_headers)
 
@@ -711,9 +741,7 @@ src_lib_libnl_cli_3_la_SOURCES = \
 EXTRA_src_lib_libnl_cli_3_la_DEPENDENCIES = \
 	libnl-cli-3.sym
 src_lib_libnl_cli_3_la_CPPFLAGS = \
-	$(warn_cppflags) \
-	$(defines_cppflags) \
-	$(default_includes) \
+	$(default_cppflags) \
 	$(NULL)
 src_lib_libnl_cli_3_la_LDFLAGS = \
 	$(src_lib_ldflags) \
@@ -729,9 +757,7 @@ src_lib_libnl_cli_3_la_LIBADD = \
 ###############################################################################
 
 src_cppflags = \
-	$(warn_cppflags) \
-	$(defines_cppflags) \
-	$(default_includes) \
+	$(default_cppflags) \
 	$(NULL)
 
 src_ldadd = \
@@ -908,9 +934,7 @@ src_nl_util_addr_LDADD =            $(src_ldadd)
 ###############################################################################
 
 tests_cppflags = \
-	$(warn_cppflags) \
-	$(defines_cppflags) \
-	$(default_includes) \
+	$(default_cppflags) \
 	$(NULL)
 
 tests_ldadd = \
@@ -1174,6 +1198,36 @@ check_build += check-build-headers-cxx
 endif
 
 ###############################################################################
+
+EXTRA_DIST += \
+	third_party/c-list/AUTHORS \
+	third_party/c-list/.editorconfig \
+	third_party/c-list/.github/workflows/ci.yml \
+	third_party/c-list/meson.build \
+	third_party/c-list/NEWS.md \
+	third_party/c-list/README.md \
+	third_party/c-list/src/c-list.h \
+	third_party/c-list/src/meson.build \
+	third_party/c-list/src/test-api.c \
+	third_party/c-list/src/test-basic.c \
+	third_party/c-list/src/test-embed.c \
+	$(NULL)
+
+check-local-c-list:
+	"$(srcdir)/tools/check-c-list.sh"
+
+check_local += check-local-c-list
+
+clean-local-c-list:
+	rm -rf ./build-c-list/
+
+clean_local += clean-local-c-list
+
+EXTRA_DIST += tools/check-c-list.sh
+
+###############################################################################
+
+clean-local: $(clean_local)
 
 check-local: $(check_build) $(check_local)
 
